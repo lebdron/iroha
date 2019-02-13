@@ -4,6 +4,8 @@
 #include <mutex>
 #include <sstream>
 
+#include <boost/core/demangle.hpp>
+
 template <typename T>
 struct ObjCounter {
   static std::atomic<size_t> objects_created;
@@ -17,7 +19,7 @@ struct ObjCounter {
   static std::string getStats() {
     std::lock_guard<std::mutex> lock(get_stats_mu_);
     std::stringstream ss;
-    ss << typeid(T).name() << ": created "
+    ss << class_name_ << ": created "
        << objects_created.load(std::memory_order_relaxed)
        << ", alive :" << objects_alive.load(std::memory_order_relaxed);
     return ss.str();
@@ -31,6 +33,7 @@ struct ObjCounter {
 
  private:
   static std::mutex get_stats_mu_;
+  static std::string class_name_;
 };
 
 template <typename T>
@@ -39,3 +42,5 @@ template <typename T>
 std::atomic<size_t> ObjCounter<T>::objects_alive(0);
 template <typename T>
 std::mutex ObjCounter<T>::get_stats_mu_;
+template <typename T>
+std::string ObjCounter<T>::class_name_(boost::core::demangle(typeid(T).name()));
