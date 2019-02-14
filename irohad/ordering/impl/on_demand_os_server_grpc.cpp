@@ -16,6 +16,8 @@
 #include "interfaces/iroha_internal/transaction_batch.hpp"
 #include "logger/logger.hpp"
 
+#include "obj_counter.hpp"
+
 using namespace iroha::ordering;
 using namespace iroha::ordering::transport;
 

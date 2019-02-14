@@ -10,6 +10,8 @@
 #include "interfaces/common_objects/transaction_sequence_common.hpp"
 #include "validators/validators_common.hpp"
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace validation {
     struct ValidationError;

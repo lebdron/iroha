@@ -9,6 +9,8 @@
 #include "interfaces/iroha_internal/transaction_batch_factory.hpp"
 #include "validators/transaction_batch_validator.hpp"
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace interface {
 
@@ -25,7 +27,7 @@ namespace shared_model {
           const types::SharedTxsCollectionType &transactions) const override;
 
       FactoryImplResult createTransactionBatch(
-          std::shared_ptr<Transaction> transaction) const override;
+          SharedPtrCounter<Transaction> transaction) const override;
 
      private:
       std::shared_ptr<validation::AbstractValidator<TransactionBatch>>

@@ -25,6 +25,8 @@
 #include "network/impl/client_factory.hpp"
 #include "validators/field_validator.hpp"
 
+#include "obj_counter.hpp"
+
 using namespace iroha;
 using namespace iroha::network;
 

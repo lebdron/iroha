@@ -11,6 +11,8 @@
 #include "common/result.hpp"
 #include "interfaces/common_objects/transaction_sequence_common.hpp"
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace interface {
 
@@ -46,7 +48,7 @@ namespace shared_model {
        */
       virtual FactoryResult<std::unique_ptr<TransactionBatch>>
       createTransactionBatch(
-          std::shared_ptr<Transaction> transaction) const = 0;
+          SharedPtrCounter<Transaction> transaction) const = 0;
     };
 
   }  // namespace interface

@@ -13,6 +13,8 @@
 #include "interfaces/common_objects/amount.hpp"
 #include "interfaces/common_objects/peer.hpp"
 
+#include "obj_counter.hpp"
+
 namespace {
   /**
    * Creates a query response using provided lambda and returns unique_ptr to it
@@ -219,7 +221,7 @@ shared_model::proto::ProtoQueryResponseFactory::createSignatoriesResponse(
 
 std::unique_ptr<shared_model::interface::QueryResponse>
 shared_model::proto::ProtoQueryResponseFactory::createTransactionsResponse(
-    std::vector<std::unique_ptr<shared_model::interface::Transaction>>
+    std::vector<UniquePtrCounter<shared_model::interface::Transaction>>
         transactions,
     const crypto::Hash &query_hash) const {
   return createQueryResponse(
@@ -238,7 +240,7 @@ shared_model::proto::ProtoQueryResponseFactory::createTransactionsResponse(
 
 std::unique_ptr<shared_model::interface::QueryResponse>
 shared_model::proto::ProtoQueryResponseFactory::createTransactionsPageResponse(
-    std::vector<std::unique_ptr<shared_model::interface::Transaction>>
+    std::vector<UniquePtrCounter<shared_model::interface::Transaction>>
         transactions,
     std::optional<std::reference_wrapper<const crypto::Hash>> next_tx_hash,
     interface::types::TransactionsNumberType all_transactions_size,
@@ -267,7 +269,7 @@ shared_model::proto::ProtoQueryResponseFactory::createTransactionsPageResponse(
 
 std::unique_ptr<shared_model::interface::QueryResponse> shared_model::proto::
     ProtoQueryResponseFactory::createPendingTransactionsPageResponse(
-        std::vector<std::unique_ptr<shared_model::interface::Transaction>>
+        std::vector<UniquePtrCounter<shared_model::interface::Transaction>>
             transactions,
         interface::types::TransactionsNumberType all_transactions_size,
         std::optional<interface::PendingTransactionsPageResponse::BatchInfo>

@@ -13,6 +13,8 @@
 #include "interfaces/queries/query.hpp"
 #include "logger/logger.hpp"
 
+#include "obj_counter.hpp"
+
 using namespace shared_model::interface::permissions;
 
 namespace iroha {

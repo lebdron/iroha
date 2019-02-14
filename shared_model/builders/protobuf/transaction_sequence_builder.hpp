@@ -11,6 +11,8 @@
 #include "interfaces/iroha_internal/transaction_sequence_factory.hpp"
 #include "module/irohad/common/validators_config.hpp"
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace proto {
 
@@ -44,7 +46,7 @@ namespace shared_model {
       iroha::expected::Result<interface::TransactionSequence, std::string>
       build(const T &transport) {
         const auto &txs = transport.transactions();
-        std::vector<std::shared_ptr<interface::Transaction>> shm_txs;
+        std::vector<SharedPtrCounter<interface::Transaction>> shm_txs;
         std::transform(txs.begin(),
                        txs.end(),
                        std::back_inserter(shm_txs),

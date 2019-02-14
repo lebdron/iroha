@@ -22,6 +22,8 @@
 #include "interfaces/transaction.hpp"
 #include "logger/logger.hpp"
 
+#include "obj_counter.hpp"
+
 using namespace iroha;
 using namespace iroha::ordering;
 using TransactionBatchType = transport::OdOsNotification::TransactionBatchType;
@@ -105,11 +107,12 @@ OnDemandOrderingServiceImpl::onRequestProposal(consensus::Round round) {
  * @param discarded_txs_amount - the amount of discarded txs
  * @return transactions
  */
-static std::vector<std::shared_ptr<shared_model::interface::Transaction>>
+static std::vector<SharedPtrCounter<shared_model::interface::Transaction>>
 getTransactions(size_t requested_tx_amount,
                 detail::BatchSetType &batch_collection,
                 boost::optional<size_t &> discarded_txs_amount) {
-  std::vector<std::shared_ptr<shared_model::interface::Transaction>> collection;
+  std::vector<SharedPtrCounter<shared_model::interface::Transaction>>
+      collection;
 
   auto it = batch_collection.begin();
   for (; it != batch_collection.end()

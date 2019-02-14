@@ -14,6 +14,8 @@
 #include "interfaces/transaction.hpp"
 #include "utils/string_builder.hpp"
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace interface {
 

@@ -9,6 +9,8 @@
 #include "interfaces/transaction.hpp"
 #include "validators/validation_error_helpers.hpp"
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace interface {
 
@@ -30,7 +32,7 @@ namespace shared_model {
 
     TransactionBatchFactoryImpl::FactoryImplResult
     TransactionBatchFactoryImpl::createTransactionBatch(
-        std::shared_ptr<Transaction> transaction) const {
+        SharedPtrCounter<Transaction> transaction) const {
       return createTransactionBatch(
           types::SharedTxsCollectionType{std::move(transaction)});
     }

@@ -17,6 +17,8 @@ namespace shared_model {
   }  // namespace interface
 }  // namespace shared_model
 
+#include "obj_counter.hpp"
+
 namespace iroha {
   namespace ametsuchi {
 

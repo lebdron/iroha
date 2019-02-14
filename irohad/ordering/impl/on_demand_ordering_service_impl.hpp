@@ -77,7 +77,7 @@ namespace iroha {
       void packNextProposals(const consensus::Round &round);
 
       using TransactionsCollectionType =
-          std::vector<std::shared_ptr<shared_model::interface::Transaction>>;
+          std::vector<SharedPtrCounter<shared_model::interface::Transaction>>;
 
       void tryCreateProposal(
           consensus::Round round,

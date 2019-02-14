@@ -11,6 +11,8 @@
 
 #include <boost/range/any_range.hpp>
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace interface {
 
@@ -24,7 +26,7 @@ namespace shared_model {
                            boost::forward_traversal_tag,
                            const Transaction &>;
 
-      using SharedTxsCollectionType = std::vector<std::shared_ptr<Transaction>>;
+      using SharedTxsCollectionType = std::vector<SharedPtrCounter<Transaction>>;
 
       using BatchesCollectionType =
           std::vector<std::shared_ptr<TransactionBatch>>;

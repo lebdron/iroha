@@ -43,7 +43,7 @@ struct ObjCounter : public ConstrBt {
   static std::atomic<size_t> objects_alive;
 
   ObjCounter() noexcept {
-    objects_created.fetch_add(1, std::memory_order_relaxed) - 1;
+    objects_created.fetch_add(1, std::memory_order_relaxed);
     objects_alive.fetch_add(1, std::memory_order_relaxed);
 
     {
@@ -102,8 +102,6 @@ class UniquePtrCounter : public ObjCounter<UniquePtrCounter<T>>,
  public:
 
   constexpr UniquePtrCounter() noexcept : std::unique_ptr<T>() {}
-  constexpr UniquePtrCounter(nullptr_t) noexcept
-      : std::unique_ptr<T>(nullptr) {}
 
   explicit UniquePtrCounter(T *p) noexcept : std::unique_ptr<T>(p) {}
 
