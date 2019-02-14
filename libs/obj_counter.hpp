@@ -4,7 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <sstream>
-#include <vector>
+#include <map>
 
 #include <execinfo.h>
 #include <boost/core/demangle.hpp>
@@ -40,60 +40,44 @@ class ConstrBt {
 
 template <typename T>
 struct ObjCounter : public ConstrBt {
-  static std::atomic<size_t> objects_created;
-  static std::atomic<size_t> objects_alive;
 
   ObjCounter() noexcept {
-    objects_created.fetch_add(1, std::memory_order_relaxed);
-    objects_alive.fetch_add(1, std::memory_order_relaxed);
-
-    {
-      std::lock_guard<std::mutex> lock(objects_vec_mu_);
-      object_id_ = objects_vec_.size();
-      objects_vec_.push_back(this);
-    }
+    std::lock_guard<std::mutex> lock(counter_mu_);
+    object_id_ = objects_created++;
+    objects_alive_.emplace(std::make_pair(object_id_, this));
   }
 
   static std::string getStats() {
-    std::lock_guard<std::mutex> lock(get_stats_mu_);
+    std::lock_guard<std::mutex> lock(counter_mu_);
     const size_t class_name_padding_length =
         obj_counter_longest_class_name.load(std::memory_order_relaxed)
         - class_name_.size();
     std::stringstream ss;
     ss << class_name_ << ": " << std::string(class_name_padding_length, '.')
-       << " created " << objects_created.load(std::memory_order_relaxed)
-       << ", alive :" << objects_alive.load(std::memory_order_relaxed);
+       << " created " << objects_created
+       << ", alive :" << objects_alive_.size();
 
-    {
-      std::lock_guard<std::mutex> lock(objects_vec_mu_);
-      ss << std::endl << "Living objects' backtraces:" << std::endl;
-      for (size_t i = 0; i < objects_vec_.size(); ++i) {
-        if (objects_vec_[i] != nullptr) {
-          ss << i << ":" << std::endl << objects_vec_[i]->getBt();
-        }
-      }
-      ss << std::endl << "End of living objects' backtraces." << std::endl;
-      return ss.str();
+    ss << std::endl << "Living objects' backtraces:" << std::endl;
+    for (const auto &id_and_ptr : objects_alive_) {
+      ss << id_and_ptr.first << ":" << std::endl << id_and_ptr.second->getBt();
     }
+    ss << std::endl << "End of living objects' backtraces." << std::endl;
+    return ss.str();
   }
 
  protected:
   ~ObjCounter()  // objects should never be removed through pointers of this type
   {
-    objects_alive.fetch_add(-1, std::memory_order_relaxed);
-
-    {
-      std::lock_guard<std::mutex> lock(objects_vec_mu_);
-      objects_vec_[object_id_] = nullptr;
-    }
+    std::lock_guard<std::mutex> lock(counter_mu_);
+    objects_alive_.erase(object_id_);
   }
 
  private:
-  static std::mutex get_stats_mu_;
   static std::string class_name_;
 
-  static std::mutex objects_vec_mu_;
-  static std::vector<ConstrBt *> objects_vec_;
+  static std::mutex counter_mu_;
+  static std::map<size_t, ConstrBt *> objects_alive_;
+  static size_t objects_created;
   size_t object_id_;
 };
 
@@ -262,11 +246,7 @@ UniquePtrCounter<T> makeUniqueCounted(Types &&... args) {
 }
 
 template <typename T>
-std::atomic<size_t> ObjCounter<T>::objects_created(0);
-template <typename T>
-std::atomic<size_t> ObjCounter<T>::objects_alive(0);
-template <typename T>
-std::mutex ObjCounter<T>::get_stats_mu_;
+size_t ObjCounter<T>::objects_created(0);
 template <typename T>
 std::string ObjCounter<T>::class_name_([] {
   std::string class_name = boost::core::demangle(typeid(T).name());
@@ -280,6 +260,6 @@ std::string ObjCounter<T>::class_name_([] {
   return class_name;
 }());
 template <typename T>
-std::mutex ObjCounter<T>::objects_vec_mu_;
+std::mutex ObjCounter<T>::counter_mu_;
 template <typename T>
-std::vector<ConstrBt *> ObjCounter<T>::objects_vec_;
+std::map<size_t, ConstrBt *> ObjCounter<T>::objects_alive_;
