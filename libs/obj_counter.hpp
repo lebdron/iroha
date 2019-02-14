@@ -14,26 +14,27 @@ static std::atomic<size_t> obj_counter_longest_class_name(0);
 class ConstrBt {
  public:
   ConstrBt() {
-    void *addresses[kMaxBtSize];
+    //void *addresses[kMaxBtSize];
 
-    bt_size_ = backtrace(addresses, kMaxBtSize);
-    backtrace_ = backtrace_symbols(addresses, bt_size_);
+    bt_size_ = backtrace(bt_addresses_, kMaxBtSize);
+    //backtrace_ = backtrace_symbols(addresses, bt_size_);
   }
 
   std::string getBt() {
-    std::string bt;
+    std::stringstream bt;
+    bt << std::hex;
     for (size_t i = 0; i < bt_size_; ++i) {
-      bt.append(backtrace_[i]);
-      bt.append("\n");
+      bt << bt_addresses_[i] << std::endl;
     }
 
-    return bt;
+    return bt.str();
   }
 
  private:
   static constexpr size_t kMaxBtSize = 20;
 
-  char **backtrace_;
+  //char **backtrace_;
+  void *bt_addresses_[kMaxBtSize];
   size_t bt_size_{0};
 };
 
