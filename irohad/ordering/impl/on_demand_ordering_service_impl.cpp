@@ -73,10 +73,10 @@ void OnDemandOrderingServiceImpl::onBatches(CollectionType batches) {
 }
 
 boost::optional<
-    std::shared_ptr<const OnDemandOrderingServiceImpl::ProposalType>>
+  SharedPtrCounter<const OnDemandOrderingServiceImpl::ProposalType>>
 OnDemandOrderingServiceImpl::onRequestProposal(consensus::Round round) {
   boost::optional<
-      std::shared_ptr<const OnDemandOrderingServiceImpl::ProposalType>>
+      SharedPtrCounter<const OnDemandOrderingServiceImpl::ProposalType>>
       result;
   {
     // tryCreateProposal will not be able to aquire the lock and access the map
@@ -161,8 +161,11 @@ void OnDemandOrderingServiceImpl::tryCreateProposal(
     // onRequestProposal will not be able to aquire the lock and access the map
     std::lock_guard<std::shared_timed_mutex> lock(proposals_mutex_);
     if (proposal_creation_strategy_->shouldCreateRound(round)) {
-      auto proposal = proposal_factory_->unsafeCreateProposal(
-          round.block_round, created_time, txs | boost::adaptors::indirected);
+      UniquePtrCounter<const transport::OdOsNotification::ProposalType>
+          proposal = proposal_factory_->unsafeCreateProposal(
+              round.block_round,
+              created_time,
+              txs | boost::adaptors::indirected);
       proposal_map_.erase(round);
       proposal_map_.emplace(round, std::move(proposal));
       log_->debug(

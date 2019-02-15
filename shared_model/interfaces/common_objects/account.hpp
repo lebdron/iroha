@@ -44,7 +44,7 @@ namespace shared_model {
        * @return the content of account asset.
        */
       std::string toString() const override {
-        return detail::PrettyStringBuilder()
+        return shared_model::detail::PrettyStringBuilder()
             .init("Account")
             .appendNamed("accountId", accountId())
             .appendNamed("domainId", domainId())

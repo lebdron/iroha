@@ -12,6 +12,8 @@
 #include "ametsuchi/ledger_state.hpp"
 #include "consensus/round.hpp"
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace interface {
     class Proposal;
@@ -25,13 +27,13 @@ namespace iroha {
      * Event, which is emitted by ordering gate, when it requests a proposal
      */
     struct OrderingEvent {
-      boost::optional<std::shared_ptr<const shared_model::interface::Proposal>>
+      boost::optional<SharedPtrCounter<const shared_model::interface::Proposal>>
           proposal;
       consensus::Round round;
       std::shared_ptr<const LedgerState> ledger_state;
     };
 
-    std::shared_ptr<const shared_model::interface::Proposal> getProposalUnsafe(
+    SharedPtrCounter<const shared_model::interface::Proposal> getProposalUnsafe(
         const OrderingEvent &event);
 
   }  // namespace network

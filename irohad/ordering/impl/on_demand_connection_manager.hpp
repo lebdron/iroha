@@ -14,6 +14,8 @@
 #include <rxcpp/rx-lite.hpp>
 #include "logger/logger_fwd.hpp"
 
+#include "obj_counter.hpp"
+
 namespace iroha {
   namespace ordering {
 
@@ -66,7 +68,7 @@ namespace iroha {
 
       void onBatches(CollectionType batches) override;
 
-      boost::optional<std::shared_ptr<const ProposalType>> onRequestProposal(
+      boost::optional<SharedPtrCounter<const ProposalType>> onRequestProposal(
           consensus::Round round) override;
 
      private:

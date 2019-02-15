@@ -20,6 +20,8 @@
 #include "ordering/impl/on_demand_common.hpp"
 #include "ordering/ordering_service_proposal_creation_strategy.hpp"
 
+#include "obj_counter.hpp"
+
 namespace iroha {
   namespace ametsuchi {
     class TxPresenceCache;
@@ -33,7 +35,7 @@ namespace iroha {
 
       using ProposalMapType = std::map<
           consensus::Round,
-          std::shared_ptr<const transport::OdOsNotification::ProposalType>>;
+          SharedPtrCounter<const transport::OdOsNotification::ProposalType>>;
     }  // namespace detail
 
     class OnDemandOrderingServiceImpl : public OnDemandOrderingService {
@@ -66,7 +68,7 @@ namespace iroha {
 
       void onBatches(CollectionType batches) override;
 
-      boost::optional<std::shared_ptr<const ProposalType>> onRequestProposal(
+      boost::optional<SharedPtrCounter<const ProposalType>> onRequestProposal(
           consensus::Round round) override;
 
      private:

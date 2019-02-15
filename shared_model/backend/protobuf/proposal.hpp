@@ -10,9 +10,12 @@
 #include "interfaces/iroha_internal/proposal.hpp"
 #include "proposal.pb.h"
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace proto {
-    class Proposal final : public interface::Proposal {
+    class Proposal final : public interface::Proposal,
+                           public ::ObjCounter<Proposal> {
      public:
       using TransportType = iroha::protocol::Proposal;
 

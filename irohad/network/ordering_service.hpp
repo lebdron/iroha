@@ -8,6 +8,8 @@
 
 #include "network/ordering_service_transport.hpp"
 
+#include "obj_counter.hpp"
+
 namespace iroha {
   namespace network {
     class OrderingService : public network::OrderingServiceNotification {
@@ -17,7 +19,7 @@ namespace iroha {
        * @param proposal - object for propagation
        */
       virtual void publishProposal(
-          std::unique_ptr<shared_model::interface::Proposal> proposal) = 0;
+          UniquePtrCounter<shared_model::interface::Proposal> proposal) = 0;
     };
   }  // namespace network
 }  // namespace iroha

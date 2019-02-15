@@ -14,6 +14,8 @@
 #include "backend/protobuf/transaction.hpp"
 #include "proposal.pb.h"
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace proto {
     template <typename Validator>
@@ -28,7 +30,7 @@ namespace shared_model {
       ProtoProposalFactory(std::shared_ptr<validation::ValidatorsConfig> config)
           : validator_{config} {}
 
-      FactoryResult<std::unique_ptr<interface::Proposal>> createProposal(
+      FactoryResult<UniquePtrCounter<interface::Proposal>> createProposal(
           interface::types::HeightType height,
           interface::types::TimestampType created_time,
           TransactionsCollectionType transactions) override {
@@ -38,7 +40,7 @@ namespace shared_model {
 
       // TODO mboldyrev 13.02.2019 IR-323
       // make it return std::shared_ptr<const interface::Proposal>
-      std::unique_ptr<interface::Proposal> unsafeCreateProposal(
+      UniquePtrCounter<interface::Proposal> unsafeCreateProposal(
           interface::types::HeightType height,
           interface::types::TimestampType created_time,
           UnsafeTransactionsCollectionType transactions) override {
@@ -49,7 +51,7 @@ namespace shared_model {
       /**
        * Create and validate proposal using protobuf object
        */
-      FactoryResult<std::unique_ptr<interface::Proposal>> createProposal(
+      FactoryResult<UniquePtrCounter<interface::Proposal>> createProposal(
           const iroha::protocol::Proposal &proposal) {
         return validate(std::make_unique<Proposal>(proposal));
       }
@@ -73,13 +75,13 @@ namespace shared_model {
         return proposal;
       }
 
-      FactoryResult<std::unique_ptr<interface::Proposal>> validate(
-          std::unique_ptr<Proposal> proposal) {
+      FactoryResult<UniquePtrCounter<interface::Proposal>> validate(
+          UniquePtrCounter<Proposal> proposal) {
         if (auto error = validator_.validate(*proposal)) {
           return iroha::expected::makeError(error->toString());
         }
 
-        return iroha::expected::makeValue<std::unique_ptr<interface::Proposal>>(
+        return iroha::expected::makeValue<UniquePtrCounter<interface::Proposal>>(
             std::move(proposal));
       }
 

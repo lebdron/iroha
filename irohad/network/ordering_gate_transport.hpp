@@ -7,6 +7,8 @@
 
 #include <memory>
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace interface {
     class TransactionBatch;
@@ -28,7 +30,7 @@ namespace iroha {
        * @param proposal - proposal object itself
        */
       virtual void onProposal(
-          std::shared_ptr<shared_model::interface::Proposal>) = 0;
+          SharedPtrCounter<shared_model::interface::Proposal>) = 0;
 
       virtual ~OrderingGateNotification() = default;
     };

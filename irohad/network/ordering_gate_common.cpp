@@ -5,10 +5,12 @@
 
 #include "network/ordering_gate_common.hpp"
 
+#include "obj_counter.hpp"
+
 namespace iroha {
   namespace network {
 
-    std::shared_ptr<const shared_model::interface::Proposal> getProposalUnsafe(
+    SharedPtrCounter<const shared_model::interface::Proposal> getProposalUnsafe(
         const OrderingEvent &event) {
       return *event.proposal;
     }

@@ -12,6 +12,8 @@
 #include "common/result.hpp"
 #include "interfaces/common_objects/types.hpp"
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace interface {
     class Proposal;
@@ -29,7 +31,7 @@ namespace shared_model {
                            boost::forward_traversal_tag,
                            const Transaction &>;
 
-      virtual FactoryResult<std::unique_ptr<Proposal>> createProposal(
+      virtual FactoryResult<UniquePtrCounter<Proposal>> createProposal(
           types::HeightType height,
           types::TimestampType created_time,
           TransactionsCollectionType transactions) = 0;

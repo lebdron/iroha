@@ -17,16 +17,24 @@
 namespace iroha {
   namespace protocol {
     class Transaction;
+    class Proposal;
   }
 }  // namespace iroha
 
 namespace shared_model {
   namespace interface {
 
+    class Proposal;
+
     namespace detail {
       template <typename Interface>
       struct BuildResultValueChooser {
         using Type = typename std::unique_ptr<Interface>;
+      };
+
+      template <>
+      struct BuildResultValueChooser<Proposal> {
+        using Type = typename ::UniquePtrCounter<Proposal>;
       };
 
       template <>

@@ -38,7 +38,7 @@ namespace shared_model {
        * @return the content of asset.
        */
       std::string toString() const override {
-        return detail::PrettyStringBuilder()
+        return shared_model::detail::PrettyStringBuilder()
             .init("Asset")
             .appendNamed("assetId", assetId())
             .appendNamed("domainId", domainId())

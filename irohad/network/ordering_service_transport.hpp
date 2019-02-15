@@ -9,6 +9,8 @@
 #include "interfaces/iroha_internal/proposal.hpp"
 #include "interfaces/iroha_internal/transaction_batch.hpp"
 
+#include "obj_counter.hpp"
+
 namespace iroha {
   namespace network {
 
@@ -48,7 +50,7 @@ namespace iroha {
        * @param proposal : proposal to be published
        */
       virtual void publishProposal(
-          std::unique_ptr<shared_model::interface::Proposal> proposal,
+          UniquePtrCounter<shared_model::interface::Proposal> proposal,
           const std::vector<std::string> &peers) = 0;
 
       virtual ~OrderingServiceTransport() = default;

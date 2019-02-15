@@ -756,6 +756,9 @@ Irohad::RunResult Irohad::initPeerCommunicationService() {
     log_->warn(UniquePtrCounter<shared_model::interface::Transaction>::getStats());
     log_->warn(SharedPtrCounter<shared_model::interface::Transaction>::getStats());
     log_->warn(shared_model::proto::Transaction::getStats());
+    log_->warn(UniquePtrCounter<shared_model::interface::Proposal>::getStats());
+    log_->warn(SharedPtrCounter<shared_model::interface::Proposal>::getStats());
+    log_->warn(shared_model::proto::Proposal::getStats());
   });
 
   pcs->onSynchronization().subscribe([this](const auto &event) {

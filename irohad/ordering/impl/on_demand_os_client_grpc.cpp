@@ -48,7 +48,7 @@ void OnDemandOsClientGrpc::onBatches(CollectionType batches) {
   });
 }
 
-boost::optional<std::shared_ptr<const OdOsNotification::ProposalType>>
+boost::optional<SharedPtrCounter<const OdOsNotification::ProposalType>>
 OnDemandOsClientGrpc::onRequestProposal(consensus::Round round) {
   grpc::ClientContext context;
   context.set_deadline(time_provider_() + proposal_request_timeout_);
@@ -66,15 +66,16 @@ OnDemandOsClientGrpc::onRequestProposal(consensus::Round round) {
   }
   return proposal_factory_->build(response.proposal())
       .match(
-          [&](auto &&v) {
-            return boost::make_optional(
-                std::shared_ptr<const OdOsNotification::ProposalType>(
-                    std::move(v).value));
+          [&](auto &&v)
+              -> boost::optional<
+                  SharedPtrCounter<const OdOsNotification::ProposalType>> {
+            return SharedPtrCounter<const OdOsNotification::ProposalType>(UniquePtrCounter<const OdOsNotification::ProposalType>(
+                std::move(v).value));
           },
           [this](const auto &error) {
             log_->info("{}", error.error.error);  // error
             return boost::optional<
-                std::shared_ptr<const OdOsNotification::ProposalType>>();
+                SharedPtrCounter<const OdOsNotification::ProposalType>>();
           });
 }
 
