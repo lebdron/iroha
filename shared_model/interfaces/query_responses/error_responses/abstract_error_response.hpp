@@ -28,7 +28,9 @@ namespace shared_model {
       // ------------------------| Primitive override |-------------------------
 
       std::string toString() const override {
-        return detail::PrettyStringBuilder().init(reason()).finalize();
+        return ::shared_model::detail::PrettyStringBuilder()
+            .init(reason())
+            .finalize();
       }
 
       bool operator==(const Model &rhs) const override {

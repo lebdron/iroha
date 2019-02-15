@@ -23,6 +23,18 @@ namespace iroha {
 namespace shared_model {
   namespace interface {
 
+    namespace detail {
+      template <typename Interface>
+      struct BuildResultValueChooser {
+        using Type = typename std::unique_ptr<Interface>;
+      };
+
+      template <>
+      struct BuildResultValueChooser<Transaction> {
+        using Type = typename ::UniquePtrCounter<Transaction>;
+      };
+    }  // namespace detail
+
     template <typename Interface, typename Transport>
     class AbstractTransportFactory {
      public:
@@ -31,26 +43,11 @@ namespace shared_model {
         std::string error;
       };
 
-      using BuildResultValue = std::unique_ptr<Interface>;
+      using BuildResultValue =
+          typename detail::BuildResultValueChooser<Interface>::Type;
 
       virtual iroha::expected::Result<BuildResultValue, Error> build(
           Transport transport) const = 0;
-
-      virtual ~AbstractTransportFactory() = default;
-    };
-
-    template <>
-    class AbstractTransportFactory<Transaction, iroha::protocol::Transaction> {
-     public:
-      struct Error {
-        types::HashType hash;
-        std::string error;
-      };
-
-      using BuildResultValue = UniquePtrCounter<Transaction>;
-
-      virtual iroha::expected::Result<BuildResultValue, Error> build(
-          iroha::protocol::Transaction transport) const = 0;
 
       virtual ~AbstractTransportFactory() = default;
     };

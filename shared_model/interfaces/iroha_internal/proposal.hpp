@@ -41,7 +41,7 @@ namespace shared_model {
       virtual const types::HashType &hash() const = 0;
 
       std::string toString() const override {
-        return detail::PrettyStringBuilder()
+        return ::shared_model::detail::PrettyStringBuilder()
             .init("Proposal")
             .appendNamed("height", height())
             .appendNamed("transactions", transactions())
