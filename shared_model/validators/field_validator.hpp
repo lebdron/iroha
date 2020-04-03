@@ -218,7 +218,6 @@ namespace shared_model {
 
       // size of key
       static const size_t public_key_size;
-      static const size_t signature_size;
       static const size_t hash_size;
       static const size_t value_size;
       size_t max_description_size;

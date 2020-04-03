@@ -24,7 +24,7 @@ namespace iroha {
                   PbConverters::serializeVote(vote).hash().SerializeAsString();
               auto blob = shared_model::crypto::Blob(serialized);
 
-              return shared_model::crypto::CryptoVerifier<>::verify(
+              return shared_model::crypto::CryptoVerifier::verify(
                   vote.signature->signedData(),
                   blob,
                   vote.signature->publicKey());

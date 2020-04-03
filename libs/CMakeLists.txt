@@ -5,6 +5,7 @@
 
 add_subdirectory(logger)
 add_subdirectory(parser)
+add_subdirectory(multihash)
 
 if (NOT USE_LIBIROHA)
     add_subdirectory(common)

@@ -5,6 +5,7 @@
 
 #include "cryptography/ed25519_ursa_impl/crypto_provider.hpp"
 
+#include "multihash/multihash.hpp"
 #include "ursa_crypto.h"
 
 namespace shared_model {
@@ -28,8 +29,8 @@ namespace shared_model {
         return Signed{""};
       }
 
-      Signed result(std::string((const std::string::value_type *)signature.data,
-                                signature.len));
+      Signed result(
+          {(const std::string::value_type *)signature.data, signature.len});
 
       ursa_ed25519_bytebuffer_free(signature);
       return result;
@@ -47,9 +48,14 @@ namespace shared_model {
           (int64_t)signed_data.blob().size(),
           const_cast<uint8_t *>(signed_data.blob().data())};
 
+      // 3 here and below - 1 byte for type, 2 bytes for length in multihash
+      if (public_key.blob().size() != kPublicKeyLength + 3) {
+        return false;
+      }
+
       const ByteBuffer kPublicKey = {
-          (int64_t)public_key.blob().size(),
-          const_cast<uint8_t *>(public_key.blob().data())};
+          (int64_t)public_key.blob().size() - 3,
+          const_cast<uint8_t *>(public_key.blob().data()) + 3};
 
       if (!ursa_ed25519_verify(&kMessage, &kSignature, &kPublicKey, &err)) {
         // handle error
@@ -71,9 +77,16 @@ namespace shared_model {
         return Keypair{PublicKey{""}, PrivateKey{""}};
       }
 
-      Keypair result(PublicKey(std::string(
-                         (const std::string::value_type *)public_key.data,
-                         public_key.len)),
+      std::string multi_blob{(const std::string::value_type *)public_key.data,
+                             public_key.len};
+
+      auto mh_pubkey = *iroha::expected::resultToOptionalValue(
+          libp2p::multi::Multihash::create(
+              libp2p::multi::HashType::ed25519pub,
+              kagome::common::Buffer{
+                  std::vector<uint8_t>{multi_blob.begin(), multi_blob.end()}}));
+
+      Keypair result(PublicKey(mh_pubkey.toBuffer().toVector()),
                      PrivateKey(std::string(
                          (const std::string::value_type *)private_key.data,
                          private_key.len)));
@@ -99,9 +112,16 @@ namespace shared_model {
         return Keypair{PublicKey{""}, PrivateKey{""}};
       }
 
-      Keypair result(PublicKey(std::string(
-                         (const std::string::value_type *)public_key.data,
-                         public_key.len)),
+      std::string multi_blob{(const std::string::value_type *)public_key.data,
+                             public_key.len};
+
+      auto mh_pubkey = *iroha::expected::resultToOptionalValue(
+          libp2p::multi::Multihash::create(
+              libp2p::multi::HashType::ed25519pub,
+              kagome::common::Buffer{
+                  std::vector<uint8_t>{multi_blob.begin(), multi_blob.end()}}));
+
+      Keypair result(PublicKey(mh_pubkey.toBuffer().toVector()),
                      PrivateKey(std::string(
                          (const std::string::value_type *)private_key.data,
                          private_key.len)));
@@ -113,10 +133,10 @@ namespace shared_model {
 
     // Ursa provides functions for retrieving key lengths, but we use hardcoded
     // values
-    const size_t CryptoProviderEd25519Ursa::kHashLength = 256 / 8;
-    const size_t CryptoProviderEd25519Ursa::kPublicKeyLength = 256 / 8;
-    const size_t CryptoProviderEd25519Ursa::kPrivateKeyLength = 512 / 8;
-    const size_t CryptoProviderEd25519Ursa::kSignatureLength = 512 / 8;
+    constexpr size_t CryptoProviderEd25519Ursa::kHashLength;
+    constexpr size_t CryptoProviderEd25519Ursa::kPublicKeyLength;
+    constexpr size_t CryptoProviderEd25519Ursa::kPrivateKeyLength;
+    constexpr size_t CryptoProviderEd25519Ursa::kSignatureLength;
 
   }  // namespace crypto
 }  // namespace shared_model

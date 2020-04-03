@@ -109,13 +109,6 @@ namespace iroha {
         PrivateKey(decrypt(Blob::fromHexString(private_key.get()).blob(),
                            pass_phrase)));
 
-    if (keypair.publicKey().size()
-            != DefaultCryptoAlgorithmType::kPublicKeyLength
-        or keypair.privateKey().size()
-            != DefaultCryptoAlgorithmType::kPrivateKeyLength) {
-      return boost::none;
-    }
-
     return validate(keypair) ? boost::make_optional(keypair) : boost::none;
   }
 

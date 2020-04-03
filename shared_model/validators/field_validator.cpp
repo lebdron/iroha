@@ -7,17 +7,20 @@
 
 #include <limits>
 
+#include <fmt/core.h>
 #include <boost/algorithm/string_regex.hpp>
 #include <boost/format.hpp>
 #include "common/bind.hpp"
-#include "cryptography/crypto_provider/crypto_defaults.hpp"
 #include "cryptography/crypto_provider/crypto_verifier.hpp"
+#include "cryptography/ed25519_sha3_impl/crypto_provider.hpp"
+#include "cryptography/ed25519_ursa_impl/crypto_provider.hpp"
 #include "interfaces/common_objects/amount.hpp"
 #include "interfaces/common_objects/peer.hpp"
 #include "interfaces/queries/account_detail_pagination_meta.hpp"
 #include "interfaces/queries/asset_pagination_meta.hpp"
 #include "interfaces/queries/query_payload_meta.hpp"
 #include "interfaces/queries/tx_pagination_meta.hpp"
+#include "multihash/multihash.hpp"
 #include "validators/field_validator.hpp"
 
 // TODO: 15.02.18 nickaleks Change structure to compositional IR-978
@@ -47,12 +50,8 @@ namespace shared_model {
         R"([A-Za-z0-9_]{1,64})";
     const std::string FieldValidator::role_id_pattern_ = R"#([a-z_0-9]{1,32})#";
 
-    const size_t FieldValidator::public_key_size =
-        crypto::DefaultCryptoAlgorithmType::kPublicKeyLength;
-    const size_t FieldValidator::signature_size =
-        crypto::DefaultCryptoAlgorithmType::kSignatureLength;
     const size_t FieldValidator::hash_size =
-        crypto::DefaultCryptoAlgorithmType::kHashLength;
+        crypto::CryptoProviderEd25519Sha3::kHashLength;
     /// limit for the set account detail size in bytes
     const size_t FieldValidator::value_size = 4 * 1024 * 1024;
 
@@ -324,23 +323,8 @@ namespace shared_model {
       for (const auto &signature : signatures) {
         const auto &sign = signature.signedData();
         const auto &pkey = signature.publicKey();
-        bool is_valid = true;
 
-        if (sign.blob().size() != signature_size) {
-          reason.second.push_back(
-              (boost::format("Invalid signature: %s") % sign.hex()).str());
-          is_valid = false;
-        }
-
-        if (pkey.blob().size() != public_key_size) {
-          reason.second.push_back(
-              (boost::format("Invalid pubkey: %s") % pkey.hex()).str());
-          is_valid = false;
-        }
-
-        if (is_valid
-            && not shared_model::crypto::CryptoVerifier<>::verify(
-                   sign, source, pkey)) {
+        if (!shared_model::crypto::CryptoVerifier::verify(sign, source, pkey)) {
           reason.second.push_back((boost::format("Wrong signature [%s;%s]")
                                    % sign.hex() % pkey.hex())
                                       .str());
@@ -388,13 +372,26 @@ namespace shared_model {
 
     boost::optional<ConcreteReasonType> validatePubkey(
         const interface::types::PubkeyType &pubkey) {
-      if (pubkey.blob().size() != FieldValidator::public_key_size) {
-        return (boost::format("Public key has wrong size, passed size: "
-                              "%d. Expected size: %d")
-                % pubkey.blob().size() % FieldValidator::public_key_size)
-            .str();
+      if (pubkey.blob().size()
+          == shared_model::crypto::CryptoProviderEd25519Sha3::
+                 kPublicKeyLength) {
+        return boost::none;
+      } else if (auto opt_multihash = iroha::expected::resultToOptionalValue(
+                     libp2p::multi::Multihash::createFromBuffer(
+                         kagome::common::Buffer{pubkey.blob()}))) {
+        if (opt_multihash->getType() == libp2p::multi::HashType::ed25519pub
+            && opt_multihash->getHash().size()
+                == shared_model::crypto::CryptoProviderEd25519Ursa::
+                       kPublicKeyLength) {
+          return boost::none;
+        }
       }
-      return boost::none;
+
+      return fmt::format(
+          "Public key has wrong size, passed size: {}. Expected size: {} or "
+          "multihash-encoded string",
+          pubkey.blob().size(),
+          shared_model::crypto::CryptoProviderEd25519Sha3::kPublicKeyLength);
     }
 
     void validatePaginationMetaPageSize(ReasonsGroupType &reason,

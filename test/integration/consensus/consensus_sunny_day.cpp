@@ -46,27 +46,22 @@ auto mk_local_peer(uint64_t num) {
 
 class FixedCryptoProvider : public MockYacCryptoProvider {
  public:
-  explicit FixedCryptoProvider(const std::string &public_key) {
-    std::string key(
-        shared_model::crypto::DefaultCryptoAlgorithmType::kPublicKeyLength, 0);
-    std::copy(public_key.begin(), public_key.end(), key.begin());
-    pubkey = clone(shared_model::crypto::PublicKey(key));
-    data = std::make_unique<shared_model::crypto::Signed>("");
-  }
+  explicit FixedCryptoProvider(const std::string &public_key)
+      : pubkey{padPubKeyString(public_key)}, data{""} {}
 
   VoteMessage getVote(YacHash hash) override {
     auto vote = MockYacCryptoProvider::getVote(hash);
     auto signature = std::make_shared<MockSignature>();
     EXPECT_CALL(*signature, publicKey())
-        .WillRepeatedly(testing::ReturnRef(*pubkey));
+        .WillRepeatedly(testing::ReturnRef(pubkey));
     EXPECT_CALL(*signature, signedData())
-        .WillRepeatedly(testing::ReturnRef(*data));
+        .WillRepeatedly(testing::ReturnRef(data));
     vote.signature = signature;
     return vote;
   }
 
-  std::unique_ptr<shared_model::crypto::PublicKey> pubkey;
-  std::unique_ptr<shared_model::crypto::Signed> data;
+  shared_model::crypto::PublicKey pubkey;
+  shared_model::crypto::Signed data;
 };
 
 class ConsensusSunnyDayTest : public ::testing::Test {

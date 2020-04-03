@@ -21,6 +21,12 @@ namespace iroha {
       // fix the tests that impose requirements on mock public key format
       std::string padPubKeyString(const std::string &str) {
         using shared_model::crypto::DefaultCryptoAlgorithmType;
+
+        // we don't need to pad str if it's already long enough
+        if (str.size() > DefaultCryptoAlgorithmType::kPublicKeyLength) {
+          return str;
+        }
+
         assert(str.size() <= DefaultCryptoAlgorithmType::kPublicKeyLength);
         std::string padded(DefaultCryptoAlgorithmType::kPublicKeyLength, '0');
         std::copy(str.begin(), str.end(), padded.begin());

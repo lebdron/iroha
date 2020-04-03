@@ -57,7 +57,7 @@ class CryptoUsageTest : public ::testing::Test {
         and std::all_of(signable.signatures().begin(),
                         signable.signatures().end(),
                         [&signable](const auto &signature) {
-                          return shared_model::crypto::CryptoVerifier<>::verify(
+                          return shared_model::crypto::CryptoVerifier::verify(
                               signature.signedData(),
                               signable.payload(),
                               signature.publicKey());
