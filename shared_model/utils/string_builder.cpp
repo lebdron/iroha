@@ -8,14 +8,14 @@
 namespace shared_model {
   namespace detail {
 
-    const std::string PrettyStringBuilder::beginBlockMarker = "[";
-    const std::string PrettyStringBuilder::endBlockMarker = "]";
-    const std::string PrettyStringBuilder::keyValueSeparator = "=";
-    const std::string PrettyStringBuilder::singleFieldsSeparator = ", ";
-    const std::string PrettyStringBuilder::initSeparator = ":";
-    const std::string PrettyStringBuilder::spaceSeparator = " ";
+    std::string_view const PrettyStringBuilder::beginBlockMarker = "[";
+    std::string_view const PrettyStringBuilder::endBlockMarker = "]";
+    std::string_view const PrettyStringBuilder::keyValueSeparator = "=";
+    std::string_view const PrettyStringBuilder::singleFieldsSeparator = ", ";
+    std::string_view const PrettyStringBuilder::initSeparator = ":";
+    std::string_view const PrettyStringBuilder::spaceSeparator = " ";
 
-    PrettyStringBuilder &PrettyStringBuilder::init(const std::string &name) {
+    PrettyStringBuilder &PrettyStringBuilder::init(std::string_view name) {
       result_.append(name);
       result_.append(initSeparator);
       result_.append(spaceSeparator);
@@ -35,7 +35,7 @@ namespace shared_model {
       return *this;
     }
 
-    PrettyStringBuilder &PrettyStringBuilder::append(const std::string &value) {
+    PrettyStringBuilder &PrettyStringBuilder::append(std::string_view value) {
       appendPartial(value);
       need_field_separator_ = true;
       return *this;

@@ -13,8 +13,9 @@ namespace iroha {
 
     extern const std::string kRootRolePermStr;
 
-    shared_model::interface::types::DomainIdType getDomainFromName(
-        const shared_model::interface::types::AccountIdType &account_id);
+    std::string_view getDomainFromName(std::string_view account_id);
+
+    std::vector<std::string_view> splitId(std::string_view id);
 
   }  // namespace ametsuchi
 }  // namespace iroha

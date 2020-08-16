@@ -1,3 +1,8 @@
+/**
+ * Copyright Soramitsu Co., Ltd. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef TEST_INTEGRATION_EXECUTOR_FIXTURE_PARAM_PROVIDER_HPP
 #define TEST_INTEGRATION_EXECUTOR_FIXTURE_PARAM_PROVIDER_HPP
 

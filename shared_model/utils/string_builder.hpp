@@ -7,6 +7,7 @@
 #define IROHA_SHARED_MODEL_STRING_BUILDER_HPP
 
 #include <string>
+#include <string_view>
 
 #include "common/to_string.hpp"
 
@@ -21,7 +22,7 @@ namespace shared_model {
        * Initializes new string with a provided name
        * @param name - name to initialize
        */
-      PrettyStringBuilder &init(const std::string &name);
+      PrettyStringBuilder &init(std::string_view name);
 
       /**
        * Inserts new level marker
@@ -35,11 +36,12 @@ namespace shared_model {
 
       ///  ----------  Single element undecorated append.  ----------  ///
 
-      PrettyStringBuilder &append(const std::string &o);
+      PrettyStringBuilder &append(std::string_view o);
 
       template <typename T>
       PrettyStringBuilder &append(const T &o) {
-        return append(iroha::to_string::toString(o));
+        auto const &str = iroha::to_string::toString(o);
+        return append(std::string_view{str});
       }
 
       ///  ----------     Augmented appending functions.   ----------  ///
@@ -65,12 +67,12 @@ namespace shared_model {
      private:
       std::string result_;
       bool need_field_separator_;
-      static const std::string beginBlockMarker;
-      static const std::string endBlockMarker;
-      static const std::string keyValueSeparator;
-      static const std::string singleFieldsSeparator;
-      static const std::string initSeparator;
-      static const std::string spaceSeparator;
+      static std::string_view const beginBlockMarker;
+      static std::string_view const endBlockMarker;
+      static std::string_view const keyValueSeparator;
+      static std::string_view const singleFieldsSeparator;
+      static std::string_view const initSeparator;
+      static std::string_view const spaceSeparator;
 
       template <typename T>
       inline void appendPartial(T const &value) {
