@@ -257,7 +257,7 @@ namespace integration_framework {
       return os_network_notifier_->getObservable();
     }
 
-    rxcpp::observable<std::shared_ptr<shared_model::interface::Proposal>>
+    rxcpp::observable<SharedPtrCounter<shared_model::interface::Proposal>>
     FakePeer::getOgProposalsObservable() {
       return og_network_notifier_->getObservable();
     }
@@ -393,7 +393,7 @@ namespace integration_framework {
       };
     }
 
-    boost::optional<std::shared_ptr<const shared_model::interface::Proposal>>
+    boost::optional<SharedPtrCounter<const shared_model::interface::Proposal>>
     FakePeer::sendProposalRequest(iroha::consensus::Round round,
                                   std::chrono::milliseconds timeout) const {
       using iroha::ordering::transport::OnDemandOsClientGrpcFactory;

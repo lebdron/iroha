@@ -17,6 +17,7 @@
 #include "logger/logger_fwd.hpp"
 #include "logger/logger_manager_fwd.hpp"
 #include "main/startup_params.hpp"
+#include "obj_counter.hpp"
 #include "synchronizer/synchronizer_common.hpp"
 
 namespace google {
@@ -335,7 +336,7 @@ namespace integration_framework {
      * @param timeout - the timeout for waiting the proposal
      * @return the proposal if received one
      */
-    boost::optional<std::shared_ptr<const shared_model::interface::Proposal>>
+    boost::optional<SharedPtrCounter<const shared_model::interface::Proposal>>
     requestProposal(const iroha::consensus::Round &round,
                     std::chrono::milliseconds timeout);
 

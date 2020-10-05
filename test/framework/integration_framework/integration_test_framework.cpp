@@ -691,7 +691,7 @@ namespace integration_framework {
     return *this;
   }
 
-  boost::optional<std::shared_ptr<const shared_model::interface::Proposal>>
+  boost::optional<SharedPtrCounter<const shared_model::interface::Proposal>>
   IntegrationTestFramework::requestProposal(
       const iroha::consensus::Round &round, std::chrono::milliseconds timeout) {
     auto on_demand_os_transport =

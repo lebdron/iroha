@@ -125,7 +125,7 @@ namespace integration_framework {
       getOsBatchesObservable();
 
       /// Get the observable of OG proposals received by this peer.
-      rxcpp::observable<std::shared_ptr<shared_model::interface::Proposal>>
+      rxcpp::observable<SharedPtrCounter<shared_model::interface::Proposal>>
       getOgProposalsObservable();
 
       /// Get the observable of block requests received by this peer.
@@ -199,7 +199,7 @@ namespace integration_framework {
        * @param timeout - time to wait for the reply.
        * @return The proposal if it was received
        */
-      boost::optional<std::shared_ptr<const shared_model::interface::Proposal>>
+      boost::optional<SharedPtrCounter<const shared_model::interface::Proposal>>
       sendProposalRequest(iroha::consensus::Round round,
                           std::chrono::milliseconds timeout) const;
 
