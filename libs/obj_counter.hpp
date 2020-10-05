@@ -214,6 +214,12 @@ class SharedPtrCounter : public ObjCounter<SharedPtrCounter<T>> {
   SharedPtrCounter(SharedPtrCounter<U> &&o) noexcept
       : ptr_(std::move(o.ptr_)) {}
 
+  template <class U,
+            typename = std::enable_if_t<
+                std::is_constructible<std::shared_ptr<T>,
+                                      std::shared_ptr<U> const &>::value>>
+  SharedPtrCounter(SharedPtrCounter<U> const &o) noexcept : ptr_(o.ptr_) {}
+
   /*
   constexpr SharedPtrCounter() noexcept : std::shared_ptr<T>() {}
 
