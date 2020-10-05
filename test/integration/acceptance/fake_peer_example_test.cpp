@@ -33,18 +33,6 @@ using ::testing::Invoke;
 static constexpr std::chrono::seconds kMstStateWaitingTime(20);
 static constexpr std::chrono::seconds kSynchronizerWaitingTime(20);
 
-const char *const kObjCounterOutDir = std::getenv("OBJ_COUNTER_OUT_DIR");
-size_t obj_counter_out_iteration = 0;
-void printCountedObjectsStats(int s) {
-  auto file_path_format = fmt::format(
-      "{}/{:>08}_{{}}", kObjCounterOutDir, obj_counter_out_iteration);
-  AllCountedStats::getAllStats(file_path_format);
-  ++obj_counter_out_iteration;
-}
-
-std::mutex AllCountedStats::mu_;
-std::vector<AllCountedStats::GetStatsFn> AllCountedStats::get_stats_;
-
 /**
  * Check that after sending a not fully signed transaction, an MST state
  * propagates to another peer
