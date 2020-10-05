@@ -31,7 +31,7 @@ namespace {
     auto timestamps =
         batch->transactions()
         | boost::adaptors::transformed(
-              +[](const std::shared_ptr<shared_model::interface::Transaction>
+              +[](const SharedPtrCounter<shared_model::interface::Transaction>
                       &tx) { return tx->createdTime(); });
     const auto min_it =
         boost::first_min_element(timestamps.begin(), timestamps.end());

@@ -66,7 +66,7 @@ namespace integration_framework {
     }
 
     void ProposalStorage::addTransactions(
-        std::vector<std::shared_ptr<shared_model::interface::Transaction>>
+        std::vector<SharedPtrCounter<shared_model::interface::Transaction>>
             transactions) {
       std::lock_guard<std::mutex> guard(pending_txs_mutex_);
       std::move(transactions.begin(),

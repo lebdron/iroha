@@ -157,7 +157,7 @@ namespace integration_framework {
         log_manager_(std::move(log_manager)),
         proposal_queue_(
             std::make_unique<CheckerQueue<
-                std::shared_ptr<const shared_model::interface::Proposal>>>(
+                SharedPtrCounter<const shared_model::interface::Proposal>>>(
                 proposal_waiting)),
         verified_proposal_queue_(
             std::make_unique<CheckerQueue<VerifiedProposalType>>(
@@ -626,8 +626,7 @@ namespace integration_framework {
     iroha::protocol::TxList tx_list;
     for (const auto &tx : transactions) {
       auto proto_tx =
-          std::static_pointer_cast<shared_model::proto::Transaction>(tx)
-              ->getTransport();
+          static_cast<shared_model::proto::Transaction &>(*tx).getTransport();
       *tx_list.add_transactions() = proto_tx;
     }
     command_client_->ListTorii(tx_list);
@@ -727,7 +726,7 @@ namespace integration_framework {
 
   IntegrationTestFramework &IntegrationTestFramework::checkProposal(
       std::function<void(
-          const std::shared_ptr<const shared_model::interface::Proposal> &)>
+          const SharedPtrCounter<const shared_model::interface::Proposal> &)>
           validation) {
     log_->info("check proposal");
     // fetch first proposal from proposal queue
@@ -746,7 +745,7 @@ namespace integration_framework {
 
   IntegrationTestFramework &IntegrationTestFramework::checkVerifiedProposal(
       std::function<void(
-          const std::shared_ptr<const shared_model::interface::Proposal> &)>
+          const SharedPtrCounter<const shared_model::interface::Proposal> &)>
           validation) {
     log_->info("check verified proposal");
     // fetch first proposal from proposal queue

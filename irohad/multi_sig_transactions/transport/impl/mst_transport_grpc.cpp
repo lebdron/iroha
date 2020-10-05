@@ -179,8 +179,7 @@ void iroha::network::sendStateAsync(
   state.iterateTransactions([&proto_state](auto const &tx) {
     // TODO (@l4l) 04/03/18 simplify with IR-1040
     *proto_state.add_transactions() =
-        std::static_pointer_cast<shared_model::proto::Transaction>(tx)
-            ->getTransport();
+        static_cast<shared_model::proto::Transaction &>(*tx).getTransport();
   });
   async_call.Call(
       [&](auto context, auto cq) {

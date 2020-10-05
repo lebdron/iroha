@@ -362,7 +362,7 @@ namespace integration_framework {
 
     Result<void, std::string> FakePeer::proposeBatches(
         BatchesCollection batches) {
-      std::vector<std::shared_ptr<shared_model::interface::Transaction>>
+      std::vector<SharedPtrCounter<shared_model::interface::Transaction>>
           transactions;
       for (auto &batch : batches) {
         std::copy(batch->transactions().begin(),
@@ -373,7 +373,7 @@ namespace integration_framework {
     }
 
     Result<void, std::string> FakePeer::proposeTransactions(
-        std::vector<std::shared_ptr<shared_model::interface::Transaction>>
+        std::vector<SharedPtrCounter<shared_model::interface::Transaction>>
             transactions) {
       return client_factory_
                      ->createClient<iroha::ordering::proto::OnDemandOrdering>(

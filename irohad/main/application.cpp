@@ -55,7 +55,6 @@
 #include "network/impl/peer_tls_certificates_provider_root.hpp"
 #include "network/impl/peer_tls_certificates_provider_wsv.hpp"
 #include "network/impl/tls_credentials.hpp"
-#include "obj_counter.hpp"
 #include "ordering/impl/kick_out_proposal_creation_strategy.hpp"
 #include "ordering/impl/on_demand_common.hpp"
 #include "ordering/impl/on_demand_ordering_gate.hpp"
@@ -753,12 +752,6 @@ Irohad::RunResult Irohad::initPeerCommunicationService() {
 
   pcs->onProposal().subscribe([this](const auto &) {
     log_->info("~~~~~~~~~| PROPOSAL ^_^ |~~~~~~~~~ ");
-    log_->warn(UniquePtrCounter<shared_model::interface::Transaction>::getStats());
-    log_->warn(SharedPtrCounter<shared_model::interface::Transaction>::getStats());
-    log_->warn(shared_model::proto::Transaction::getStats());
-    log_->warn(UniquePtrCounter<shared_model::interface::Proposal>::getStats());
-    log_->warn(SharedPtrCounter<shared_model::interface::Proposal>::getStats());
-    log_->warn(shared_model::proto::Proposal::getStats());
   });
 
   pcs->onSynchronization().subscribe([this](const auto &event) {

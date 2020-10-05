@@ -369,7 +369,7 @@ namespace integration_framework {
      */
     IntegrationTestFramework &checkProposal(
         std::function<void(
-            const std::shared_ptr<const shared_model::interface::Proposal> &)>
+            const SharedPtrCounter<const shared_model::interface::Proposal> &)>
             validation);
 
     /**
@@ -389,7 +389,7 @@ namespace integration_framework {
      */
     IntegrationTestFramework &checkVerifiedProposal(
         std::function<void(
-            const std::shared_ptr<const shared_model::interface::Proposal> &)>
+            const SharedPtrCounter<const shared_model::interface::Proposal> &)>
             validation);
 
     /**
@@ -500,7 +500,7 @@ namespace integration_framework {
     logger::LoggerManagerTreePtr log_manager_;
 
     std::unique_ptr<
-        CheckerQueue<std::shared_ptr<const shared_model::interface::Proposal>>>
+        CheckerQueue<SharedPtrCounter<const shared_model::interface::Proposal>>>
         proposal_queue_;
     std::unique_ptr<CheckerQueue<VerifiedProposalType>>
         verified_proposal_queue_;

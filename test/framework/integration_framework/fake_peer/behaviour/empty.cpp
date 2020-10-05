@@ -15,7 +15,7 @@ namespace integration_framework {
     void EmptyBehaviour::processOsBatch(
         std::shared_ptr<shared_model::interface::TransactionBatch> batch) {}
     void EmptyBehaviour::processOgProposal(
-        std::shared_ptr<shared_model::interface::Proposal> proposal) {}
+        SharedPtrCounter<shared_model::interface::Proposal> proposal) {}
     LoaderBlockRequestResult EmptyBehaviour::processLoaderBlockRequest(
         LoaderBlockRequest request) {
       return {};

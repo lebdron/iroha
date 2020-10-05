@@ -49,7 +49,7 @@ namespace integration_framework {
 
       /// This method gets subscribed on Fake Peer's OG messages.
       virtual void processOgProposal(
-          std::shared_ptr<shared_model::interface::Proposal> proposal) = 0;
+          SharedPtrCounter<shared_model::interface::Proposal> proposal) = 0;
 
       /// This method handles block requests for Fake Peer's.
       virtual LoaderBlockRequestResult processLoaderBlockRequest(

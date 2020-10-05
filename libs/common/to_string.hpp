@@ -13,6 +13,7 @@
 #include <string_view>
 
 #include <boost/optional.hpp>
+#include "obj_counter.hpp"
 
 namespace iroha {
   namespace to_string {
@@ -67,6 +68,16 @@ namespace iroha {
 
     template <typename... T>
     inline std::string toString(const std::shared_ptr<T...> &o) {
+      return detail::toStringDereferenced(o);
+    }
+
+    template <typename... T>
+    inline std::string toString(const UniquePtrCounter<T...> &o) {
+      return detail::toStringDereferenced(o);
+    }
+
+    template <typename... T>
+    inline std::string toString(const SharedPtrCounter<T...> &o) {
       return detail::toStringDereferenced(o);
     }
 

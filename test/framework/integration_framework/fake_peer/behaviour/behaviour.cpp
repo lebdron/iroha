@@ -71,7 +71,7 @@ namespace integration_framework {
           });
       fake_peer->getOgProposalsObservable().subscribe(
           subscription,
-          [locker](std::shared_ptr<shared_model::interface::Proposal> const
+          [locker](SharedPtrCounter<shared_model::interface::Proposal> const
                        &proposal) {
             locker.protect() |
                 [&](auto protector) { protector->processOgProposal(proposal); };

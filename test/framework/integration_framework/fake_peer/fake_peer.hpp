@@ -188,7 +188,7 @@ namespace integration_framework {
 
       /// Send the real peer the provided transactions for proposal.
       iroha::expected::Result<void, std::string> proposeTransactions(
-          std::vector<std::shared_ptr<shared_model::interface::Transaction>>
+          std::vector<SharedPtrCounter<shared_model::interface::Transaction>>
               transactions);
 
       /**

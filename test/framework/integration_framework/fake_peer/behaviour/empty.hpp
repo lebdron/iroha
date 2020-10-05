@@ -26,8 +26,8 @@ namespace integration_framework {
       void processOsBatch(
           std::shared_ptr<shared_model::interface::TransactionBatch> batch)
           override;
-      void processOgProposal(
-          std::shared_ptr<shared_model::interface::Proposal> proposal) override;
+      void processOgProposal(SharedPtrCounter<shared_model::interface::Proposal>
+                                 proposal) override;
       LoaderBlockRequestResult processLoaderBlockRequest(
           LoaderBlockRequest request) override;
       LoaderBlocksRequestResult processLoaderBlocksRequest(
