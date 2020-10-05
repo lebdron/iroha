@@ -459,6 +459,9 @@ namespace integration_framework {
     /// Set the ITF peer keypair and initialize irohad pipeline.
     void initPipeline(const shared_model::crypto::Keypair &keypair);
 
+    /// Start the ITF without queues.
+    void run();
+
     /// Start the ITF.
     void subscribeQueuesAndRun();
 

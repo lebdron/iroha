@@ -163,6 +163,15 @@ target_link_libraries(fake_peer_example_test
     ametsuchi
     )
 
+addtest(peer_synchronization_test
+    peer_synchronization_test.cpp
+    )
+target_link_libraries(peer_synchronization_test
+    acceptance_fixture
+    integration_framework
+    ametsuchi
+    )
+
 addtest(set_account_quorum_test
     set_account_quorum_test.cpp
     )

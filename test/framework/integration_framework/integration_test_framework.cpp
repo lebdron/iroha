@@ -386,6 +386,18 @@ namespace integration_framework {
     log_->info("created pipeline");
   }
 
+  void IntegrationTestFramework::run() {
+    if (fake_peers_.size() > 0) {
+      log_->info("starting fake iroha peers");
+      for (auto &fake_peer : fake_peers_) {
+        fake_peers_servers_.push_back(fake_peer->run());
+      }
+    }
+    // start instance
+    log_->info("starting main iroha instance");
+    iroha_instance_->run();
+  }
+
   void IntegrationTestFramework::subscribeQueuesAndRun() {
     // subscribing for components
 
@@ -441,15 +453,7 @@ namespace integration_framework {
                      response->toString());
         });
 
-    if (fake_peers_.size() > 0) {
-      log_->info("starting fake iroha peers");
-      for (auto &fake_peer : fake_peers_) {
-        fake_peers_servers_.push_back(fake_peer->run());
-      }
-    }
-    // start instance
-    log_->info("starting main iroha instance");
-    iroha_instance_->run();
+    run();
   }
 
   std::shared_ptr<shared_model::interface::Peer>

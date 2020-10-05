@@ -76,7 +76,7 @@ bool PostgresBlockStorage::insert(
                                        ":block_data)",
                         soci::use(inserted_height),
                         soci::use(b));
-  log_->debug("insert block {}: {}", inserted_height, b);
+  // log_->debug("insert block {}: {}", inserted_height, b);
   try {
     st.execute(true);
 
