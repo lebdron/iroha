@@ -15,4 +15,8 @@ void printCountedObjectsStats(int s) {
 }
 
 std::mutex AllCountedStats::mu_;
-std::vector<AllCountedStats::GetStatsFn> AllCountedStats::get_stats_;
+
+std::vector<GetStatsFn> &getStats() {
+  static std::vector<GetStatsFn> get_stats;
+  return get_stats;
+}

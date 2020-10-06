@@ -14,13 +14,27 @@
 #include <fmt/core.h>
 #include <boost/core/demangle.hpp>
 
+class ConstrBt;
+struct AllCountedStats;
+
 static std::atomic<size_t> obj_counter_longest_class_name(0);
 
+template <typename T>
+size_t &getObjectsCreated();
+template <typename T>
+const AllCountedStats &getAllStatsRegister();
+template <typename T>
+std::map<size_t, ConstrBt *> &getObjectsAlive();
+template <typename T>
+std::mutex &getCounterMu();
+
+using GetStatsFn = void (*)(const std::string &);
+std::vector<GetStatsFn> &getStats();
+
 struct AllCountedStats {
-  using GetStatsFn = void (*)(const std::string &);
   AllCountedStats(GetStatsFn f) {
     std::lock_guard<std::mutex> lock(mu_);
-    get_stats_.emplace_back(f);
+    getStats().emplace_back(f);
   }
 
   // for this object to be ever used
@@ -28,14 +42,14 @@ struct AllCountedStats {
 
   static void getAllStats(const std::string &file_path_format) {
     std::lock_guard<std::mutex> lock(mu_);
-    for (const auto &f : get_stats_) {
+    for (const auto &f : getStats()) {
       (*f)(file_path_format);
     }
   }
 
  private:
   static std::mutex mu_;
-  static std::vector<GetStatsFn> get_stats_;
+  // static std::vector<GetStatsFn> get_stats_;
 };
 
 class ConstrBt {
@@ -65,27 +79,30 @@ class ConstrBt {
 template <typename T>
 struct ObjCounter : public ConstrBt {
   ObjCounter() noexcept {
-    std::lock_guard<std::mutex> lock(counter_mu_);
-    object_id_ = objects_created++;
-    objects_alive_.emplace(std::make_pair(object_id_, this));
-    all_stats_register_.useMe();
+    std::lock_guard<std::mutex> lock(getCounterMu<T>());
+    object_id_ = getObjectsCreated<T>()++;
+    getObjectsAlive<T>().emplace(std::make_pair(object_id_, this));
+    getAllStatsRegister<T>().useMe();
   }
+
+  ObjCounter(ObjCounter const &) noexcept : ObjCounter() {}
+  // ObjCounter(ObjCounter &&) noexcept : ObjCounter() {}
 
   static void getStats(const std::string &file_path_format) {
     auto file_path = fmt::format(file_path_format, class_name_);
     std::ofstream of(file_path);
     assert(of.good());
     {
-      std::lock_guard<std::mutex> lock(counter_mu_);
+      std::lock_guard<std::mutex> lock(getCounterMu<T>());
       const size_t class_name_padding_length =
           obj_counter_longest_class_name.load(std::memory_order_relaxed)
           - class_name_.size();
       of << class_name_ << ": " << std::string(class_name_padding_length, '.')
-         << " created " << objects_created
-         << ", alive :" << objects_alive_.size();
+         << " created " << getObjectsCreated<T>()
+         << ", alive :" << getObjectsAlive<T>().size();
 
       of << std::endl << "Living objects' backtraces:" << std::endl;
-      for (const auto &id_and_ptr : objects_alive_) {
+      for (const auto &id_and_ptr : getObjectsAlive<T>()) {
         of << std::dec << id_and_ptr.first << ":" << std::endl << std::hex;
         id_and_ptr.second->getBt(of);
       }
@@ -100,17 +117,14 @@ struct ObjCounter : public ConstrBt {
   ~ObjCounter()  // objects should never be removed through pointers of this
                  // type
   {
-    std::lock_guard<std::mutex> lock(counter_mu_);
-    objects_alive_.erase(object_id_);
+    std::lock_guard<std::mutex> lock(getCounterMu<T>());
+    auto it = getObjectsAlive<T>().find(object_id_);
+    assert(it != getObjectsAlive<T>().end());
+    getObjectsAlive<T>().erase(it);
   }
 
  private:
   static std::string class_name_;
-  static const AllCountedStats all_stats_register_;
-
-  static std::mutex counter_mu_;
-  static std::map<size_t, ConstrBt *> objects_alive_;
-  static size_t objects_created;
   size_t object_id_;
 };
 
@@ -344,8 +358,6 @@ UniquePtrCounter<T> makeUniqueCounted(Types &&... args) {
 }
 
 template <typename T>
-size_t ObjCounter<T>::objects_created(0);
-template <typename T>
 std::string ObjCounter<T>::class_name_([] {
   std::string class_name = boost::core::demangle(typeid(T).name());
   const size_t my_class_name_length = class_name.size();
@@ -357,10 +369,27 @@ std::string ObjCounter<T>::class_name_([] {
     ;
   return class_name;
 }());
+
 template <typename T>
-const AllCountedStats ObjCounter<T>::all_stats_register_(
-    &ObjCounter<T>::getStats);
+inline size_t &getObjectsCreated() {
+  static size_t objects_created(0);
+  return objects_created;
+}
+
 template <typename T>
-std::mutex ObjCounter<T>::counter_mu_;
+inline const AllCountedStats &getAllStatsRegister() {
+  static const AllCountedStats all_stats_register(&ObjCounter<T>::getStats);
+  return all_stats_register;
+}
+
 template <typename T>
-std::map<size_t, ConstrBt *> ObjCounter<T>::objects_alive_;
+inline std::mutex &getCounterMu() {
+  static std::mutex counter_mu;
+  return counter_mu;
+}
+
+template <typename T>
+inline std::map<size_t, ConstrBt *> &getObjectsAlive() {
+  static std::map<size_t, ConstrBt *> objects_alive;
+  return objects_alive;
+}
