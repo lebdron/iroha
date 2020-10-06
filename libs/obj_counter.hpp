@@ -86,7 +86,7 @@ struct ObjCounter : public ConstrBt {
 
       of << std::endl << "Living objects' backtraces:" << std::endl;
       for (const auto &id_and_ptr : objects_alive_) {
-        of << id_and_ptr.first << ":" << std::endl;
+        of << std::dec << id_and_ptr.first << ":" << std::endl << std::hex;
         id_and_ptr.second->getBt(of);
       }
     }
