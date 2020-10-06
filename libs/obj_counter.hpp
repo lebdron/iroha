@@ -88,6 +88,10 @@ struct ObjCounter : public ConstrBt {
   ObjCounter(ObjCounter const &) noexcept : ObjCounter() {}
   // ObjCounter(ObjCounter &&) noexcept : ObjCounter() {}
 
+  ObjCounter &operator=(ObjCounter const &o) {
+    return *this;
+  }
+
   static void getStats(const std::string &file_path_format) {
     auto file_path = fmt::format(file_path_format, class_name_);
     std::ofstream of(file_path);
