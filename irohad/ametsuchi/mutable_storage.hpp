@@ -40,7 +40,7 @@ namespace iroha {
        *  - LedgerState - the state of ledger on which the block is applied
        */
       using MutableStoragePredicate = std::function<bool(
-          std::shared_ptr<const shared_model::interface::Block>,
+          SharedPtrCounter<const shared_model::interface::Block>,
           const LedgerState &)>;
 
       struct CommitResult {
@@ -53,7 +53,7 @@ namespace iroha {
        * @see apply(block, function)
        */
       virtual bool apply(
-          std::shared_ptr<const shared_model::interface::Block> block) = 0;
+          SharedPtrCounter<const shared_model::interface::Block> block) = 0;
 
       /**
        * Applies an observable of blocks to current mutable state using logic
@@ -64,7 +64,7 @@ namespace iroha {
        * @return True if blocks were successfully applied, false otherwise.
        */
       virtual bool apply(
-          rxcpp::observable<std::shared_ptr<shared_model::interface::Block>>
+          rxcpp::observable<SharedPtrCounter<shared_model::interface::Block>>
               blocks,
           MutableStoragePredicate predicate) = 0;
 

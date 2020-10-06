@@ -589,7 +589,7 @@ Irohad::RunResult Irohad::initOrderingGate() {
 
     auto &block =
         boost::get<
-            expected::Value<std::unique_ptr<shared_model::interface::Block>>>(
+            expected::Value<UniquePtrCounter<shared_model::interface::Block>>>(
             block_result)
             .value;
     hashes.push_back(block->hash());

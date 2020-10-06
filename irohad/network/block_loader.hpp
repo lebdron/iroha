@@ -26,7 +26,7 @@ namespace iroha {
        * @return
        */
       virtual iroha::expected::Result<
-          rxcpp::observable<std::shared_ptr<shared_model::interface::Block>>,
+          rxcpp::observable<SharedPtrCounter<shared_model::interface::Block>>,
           std::string>
       retrieveBlocks(const shared_model::interface::types::HeightType height,
                      shared_model::interface::types::PublicKeyHexStringView
@@ -40,7 +40,7 @@ namespace iroha {
        * TODO 14/02/17 (@l4l) IR-960 rework method with returning result
        */
       virtual iroha::expected::Result<
-          std::unique_ptr<shared_model::interface::Block>,
+          UniquePtrCounter<shared_model::interface::Block>,
           std::string>
       retrieveBlock(
           shared_model::interface::types::PublicKeyHexStringView peer_pubkey,

@@ -38,7 +38,7 @@ namespace iroha {
           std::shared_ptr<shared_model::interface::TxStatusFactory>
               status_factory,
           rxcpp::observable<
-              std::shared_ptr<const shared_model::interface::Block>> commits,
+              SharedPtrCounter<const shared_model::interface::Block>> commits,
           logger::LoggerPtr log);
 
       void batchHandle(

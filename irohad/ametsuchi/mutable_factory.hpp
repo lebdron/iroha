@@ -55,7 +55,7 @@ namespace iroha {
        * @return Result of committing the prepared block.
        */
       virtual CommitResult commitPrepared(
-          std::shared_ptr<const shared_model::interface::Block> block) = 0;
+          SharedPtrCounter<const shared_model::interface::Block> block) = 0;
 
       virtual ~MutableFactory() = default;
     };

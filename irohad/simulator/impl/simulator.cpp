@@ -95,7 +95,7 @@ namespace iroha {
       return validated_proposal_and_errors;
     }
 
-    boost::optional<std::shared_ptr<shared_model::interface::Block>>
+    boost::optional<SharedPtrCounter<shared_model::interface::Block>>
     Simulator::processVerifiedProposal(
         const std::shared_ptr<iroha::validation::VerifiedProposalAndErrors>
             &verified_proposal_and_errors,
@@ -108,7 +108,7 @@ namespace iroha {
            verified_proposal_and_errors->rejected_transactions) {
         rejected_hashes.push_back(rejected_tx.tx_hash);
       }
-      std::shared_ptr<shared_model::interface::Block> block =
+      SharedPtrCounter<shared_model::interface::Block> block =
           block_factory_->unsafeCreateBlock(top_block_info.height + 1,
                                             top_block_info.top_hash,
                                             proposal->createdTime(),

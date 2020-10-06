@@ -141,7 +141,7 @@ shared_model::proto::ProtoQueryResponseFactory::createAccountResponse(
 
 std::unique_ptr<shared_model::interface::QueryResponse>
 shared_model::proto::ProtoQueryResponseFactory::createBlockResponse(
-    std::unique_ptr<shared_model::interface::Block> block,
+    UniquePtrCounter<shared_model::interface::Block> block,
     const crypto::Hash &query_hash) const {
   return createQueryResponse(
       [block = std::move(block)](
@@ -421,7 +421,7 @@ shared_model::proto::ProtoQueryResponseFactory::createEngineReceiptsResponse(
 
 std::unique_ptr<shared_model::interface::BlockQueryResponse>
 shared_model::proto::ProtoQueryResponseFactory::createBlockQueryResponse(
-    std::shared_ptr<const shared_model::interface::Block> block) const {
+    SharedPtrCounter<const shared_model::interface::Block> block) const {
   return createQueryResponse(
       [block = std::move(block)](
           iroha::protocol::BlockQueryResponse &protocol_query_response) {

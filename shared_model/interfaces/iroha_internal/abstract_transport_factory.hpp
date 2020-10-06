@@ -18,6 +18,7 @@ namespace iroha {
   namespace protocol {
     class Transaction;
     class Proposal;
+    class Block;
   }
 }  // namespace iroha
 
@@ -40,6 +41,11 @@ namespace shared_model {
       template <>
       struct BuildResultValueChooser<Transaction> {
         using Type = typename ::UniquePtrCounter<Transaction>;
+      };
+
+      template <>
+      struct BuildResultValueChooser<Block> {
+        using Type = typename ::UniquePtrCounter<Block>;
       };
     }  // namespace detail
 

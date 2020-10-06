@@ -24,7 +24,7 @@ namespace iroha {
         : supermajority_checker_(supermajority_checker), log_(std::move(log)) {}
 
     bool ChainValidatorImpl::validateAndApply(
-        rxcpp::observable<std::shared_ptr<shared_model::interface::Block>>
+        rxcpp::observable<SharedPtrCounter<shared_model::interface::Block>>
             blocks,
         ametsuchi::MutableStorage &storage) const {
       log_->info("validate chain...");
@@ -97,7 +97,7 @@ namespace iroha {
     }
 
     bool ChainValidatorImpl::validateBlock(
-        std::shared_ptr<const shared_model::interface::Block> block,
+        SharedPtrCounter<const shared_model::interface::Block> block,
         const iroha::LedgerState &ledger_state) const {
       log_->debug("validate block: height {}, hash {}",
                   block->height(),

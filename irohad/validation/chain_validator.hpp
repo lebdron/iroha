@@ -10,6 +10,8 @@
 
 #include <rxcpp/rx-observable-fwd.hpp>
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace interface {
     class Block;
@@ -44,7 +46,7 @@ namespace iroha {
        * otherwise
        */
       virtual bool validateAndApply(
-          rxcpp::observable<std::shared_ptr<shared_model::interface::Block>>
+          rxcpp::observable<SharedPtrCounter<shared_model::interface::Block>>
               blocks,
           ametsuchi::MutableStorage &storage) const = 0;
     };

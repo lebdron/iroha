@@ -53,7 +53,7 @@ PostgresBlockStorage::~PostgresBlockStorage() {
 }
 
 bool PostgresBlockStorage::insert(
-    std::shared_ptr<const shared_model::interface::Block> block) {
+    SharedPtrCounter<const shared_model::interface::Block> block) {
   const auto inserted_height = block->height();
 
   if (block_height_range_) {
@@ -95,7 +95,7 @@ bool PostgresBlockStorage::insert(
   }
 }
 
-boost::optional<std::unique_ptr<shared_model::interface::Block>>
+boost::optional<UniquePtrCounter<shared_model::interface::Block>>
 PostgresBlockStorage::fetch(
     shared_model::interface::types::HeightType height) const {
   soci::session sql(*pool_wrapper_->connection_pool_);
@@ -122,12 +122,12 @@ PostgresBlockStorage::fetch(
                 .match(
                     [&](auto &&v) {
                       return boost::make_optional(
-                          std::unique_ptr<shared_model::interface::Block>(
+                          UniquePtrCounter<shared_model::interface::Block>(
                               std::move(v.value)));
                     },
                     [&](const auto &e)
                         -> boost::optional<
-                            std::unique_ptr<shared_model::interface::Block>> {
+                            UniquePtrCounter<shared_model::interface::Block>> {
                       log_->error("Could not build block at height {}: {}",
                                   height,
                                   e.error);

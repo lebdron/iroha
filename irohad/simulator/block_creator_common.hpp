@@ -26,7 +26,7 @@ namespace iroha {
 
     struct RoundData {
       SharedPtrCounter<const shared_model::interface::Proposal> proposal;
-      std::shared_ptr<shared_model::interface::Block> block;
+      SharedPtrCounter<shared_model::interface::Block> block;
     };
 
     /**
@@ -39,7 +39,7 @@ namespace iroha {
       std::shared_ptr<const LedgerState> ledger_state;
     };
 
-    std::shared_ptr<shared_model::interface::Block> getBlockUnsafe(
+    SharedPtrCounter<shared_model::interface::Block> getBlockUnsafe(
         const BlockCreatorEvent &event);
 
   }  // namespace simulator

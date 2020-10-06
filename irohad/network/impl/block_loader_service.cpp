@@ -61,7 +61,7 @@ grpc::Status BlockLoaderService::retrieveBlocks(
 
     auto &block =
         boost::get<
-            expected::Value<std::unique_ptr<shared_model::interface::Block>>>(
+            expected::Value<UniquePtrCounter<shared_model::interface::Block>>>(
             block_result)
             .value;
 
@@ -89,7 +89,7 @@ grpc::Status BlockLoaderService::retrieveBlock(
   if (cached_block) {
     if (cached_block->height() == height) {
       auto block_v1 =
-          std::static_pointer_cast<shared_model::proto::Block>(cached_block)
+          static_cast<shared_model::proto::Block const *>(cached_block.get())
               ->getTransport();
       *response->mutable_block_v1() = block_v1;
       return grpc::Status::OK;

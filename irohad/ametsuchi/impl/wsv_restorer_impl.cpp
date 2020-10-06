@@ -30,7 +30,7 @@ namespace {
      * successfully
      */
     bool insert(
-        std::shared_ptr<const shared_model::interface::Block> block) override {
+        SharedPtrCounter<const shared_model::interface::Block> block) override {
       return true;
     }
 
@@ -38,7 +38,7 @@ namespace {
      * Returns boost::none - it is not required to fetch individual blocks
      * during WSV reindexing
      */
-    boost::optional<std::unique_ptr<shared_model::interface::Block>> fetch(
+    boost::optional<UniquePtrCounter<shared_model::interface::Block>> fetch(
         HeightType height) const override {
       return boost::none;
     }

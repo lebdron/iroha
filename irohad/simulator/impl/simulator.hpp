@@ -50,7 +50,7 @@ namespace iroha {
       rxcpp::observable<VerifiedProposalCreatorEvent> onVerifiedProposal()
           override;
 
-      boost::optional<std::shared_ptr<shared_model::interface::Block>>
+      boost::optional<SharedPtrCounter<shared_model::interface::Block>>
       processVerifiedProposal(
           const std::shared_ptr<iroha::validation::VerifiedProposalAndErrors>
               &verified_proposal_and_errors,

@@ -11,6 +11,8 @@
 #include "common/result.hpp"
 #include "interfaces/common_objects/types.hpp"
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace interface {
     class Block;
@@ -25,7 +27,7 @@ namespace shared_model {
        * @param json - json string for a block
        * @return pointer to a block if json was valid or an error
        */
-      virtual iroha::expected::Result<std::unique_ptr<Block>, std::string>
+      virtual iroha::expected::Result<UniquePtrCounter<Block>, std::string>
       deserialize(const types::JsonType &json) const = 0;
 
       virtual ~BlockJsonDeserializer() = default;

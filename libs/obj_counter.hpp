@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <map>

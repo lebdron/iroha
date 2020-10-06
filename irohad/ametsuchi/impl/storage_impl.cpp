@@ -144,7 +144,7 @@ namespace iroha {
     }
 
     expected::Result<void, std::string> StorageImpl::insertBlock(
-        std::shared_ptr<const shared_model::interface::Block> block) {
+        SharedPtrCounter<const shared_model::interface::Block> block) {
       log_->info("create mutable storage");
       return createCommandExecutor() | [&](auto &&command_executor) {
         return createMutableStorage(std::move(command_executor)) |
@@ -312,7 +312,7 @@ namespace iroha {
     }
 
     CommitResult StorageImpl::commitPrepared(
-        std::shared_ptr<const shared_model::interface::Block> block) {
+        SharedPtrCounter<const shared_model::interface::Block> block) {
       if (not prepared_blocks_enabled_) {
         return expected::makeError(
             std::string{"prepared blocks are not enabled"});
@@ -408,7 +408,7 @@ namespace iroha {
       return boost::make_optional(std::move(setting_query_ptr));
     }
 
-    rxcpp::observable<std::shared_ptr<const shared_model::interface::Block>>
+    rxcpp::observable<SharedPtrCounter<const shared_model::interface::Block>>
     StorageImpl::on_commit() {
       return notifier_.get_observable();
     }
@@ -442,7 +442,7 @@ namespace iroha {
     }
 
     StorageImpl::StoreBlockResult StorageImpl::storeBlock(
-        std::shared_ptr<const shared_model::interface::Block> block) {
+        SharedPtrCounter<const shared_model::interface::Block> block) {
       if (block_store_->insert(block)) {
         notifier_.get_subscriber().on_next(block);
         return {};

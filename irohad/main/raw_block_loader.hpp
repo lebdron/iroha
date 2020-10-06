@@ -33,7 +33,7 @@ namespace iroha {
        * @return model Block if operation done successfully, error otherwise
        */
       static iroha::expected::
-          Result<std::unique_ptr<shared_model::interface::Block>, std::string>
+          Result<UniquePtrCounter<shared_model::interface::Block>, std::string>
           parseBlock(const std::string &data);
     };
 

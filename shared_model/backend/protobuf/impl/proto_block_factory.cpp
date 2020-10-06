@@ -22,7 +22,7 @@ ProtoBlockFactory::ProtoBlockFactory(
     : interface_validator_{std::move(interface_validator)},
       proto_validator_{std::move(proto_validator)} {}
 
-std::unique_ptr<shared_model::interface::Block>
+UniquePtrCounter<shared_model::interface::Block>
 ProtoBlockFactory::unsafeCreateBlock(
     interface::types::HeightType height,
     const interface::types::HashType &prev_hash,
@@ -63,14 +63,14 @@ ProtoBlockFactory::unsafeCreateBlock(
   return model_proto_block;
 }
 
-iroha::expected::Result<std::unique_ptr<shared_model::interface::Block>,
+iroha::expected::Result<UniquePtrCounter<shared_model::interface::Block>,
                         std::string>
 ProtoBlockFactory::createBlock(iroha::protocol::Block block) {
   if (auto error = proto_validator_->validate(block)) {
     return iroha::expected::makeError(error->toString());
   }
 
-  std::unique_ptr<shared_model::interface::Block> proto_block =
+  UniquePtrCounter<shared_model::interface::Block> proto_block =
       std::make_unique<Block>(std::move(block.block_v1()));
   if (auto error = interface_validator_->validate(*proto_block)) {
     return iroha::expected::makeError(error->toString());

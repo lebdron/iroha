@@ -29,7 +29,7 @@ ProtoBlockJsonConverter::serialize(const interface::Block &block) const
   return iroha::expected::makeValue(result);
 }
 
-iroha::expected::Result<std::unique_ptr<interface::Block>, std::string>
+iroha::expected::Result<UniquePtrCounter<interface::Block>, std::string>
 ProtoBlockJsonConverter::deserialize(
     const interface::types::JsonType &json) const noexcept {
   iroha::protocol::Block block;
@@ -37,7 +37,7 @@ ProtoBlockJsonConverter::deserialize(
   if (not status.ok()) {
     return iroha::expected::makeError(status.error_message());
   }
-  std::unique_ptr<interface::Block> result =
+  UniquePtrCounter<interface::Block> result =
       std::make_unique<Block>(std::move(block.block_v1()));
   return iroha::expected::makeValue(std::move(result));
 }

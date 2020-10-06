@@ -37,7 +37,7 @@ namespace iroha {
                          logger::LoggerPtr log);
 
       bool validateAndApply(
-          rxcpp::observable<std::shared_ptr<shared_model::interface::Block>>
+          rxcpp::observable<SharedPtrCounter<shared_model::interface::Block>>
               blocks,
           ametsuchi::MutableStorage &storage) const override;
 
@@ -63,7 +63,7 @@ namespace iroha {
        * of ledger peers
        */
       bool validateBlock(
-          std::shared_ptr<const shared_model::interface::Block> block,
+          SharedPtrCounter<const shared_model::interface::Block> block,
           const iroha::LedgerState &ledger_state) const;
 
       /**

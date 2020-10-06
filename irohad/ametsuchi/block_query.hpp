@@ -32,7 +32,7 @@ namespace iroha {
       };
 
       using BlockResult =
-          expected::Result<std::unique_ptr<shared_model::interface::Block>,
+          expected::Result<UniquePtrCounter<shared_model::interface::Block>,
                            GetBlockError>;
 
       virtual ~BlockQuery() = default;

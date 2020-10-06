@@ -48,7 +48,7 @@ namespace iroha {
     }
 
     bool MutableStorageImpl::apply(
-        std::shared_ptr<const shared_model::interface::Block> block,
+        SharedPtrCounter<const shared_model::interface::Block> block,
         MutableStoragePredicate predicate) {
       auto execute_transaction = [this](auto &transaction) -> bool {
         auto result = transaction_executor_->execute(transaction, false);
@@ -113,14 +113,14 @@ namespace iroha {
     }
 
     bool MutableStorageImpl::apply(
-        std::shared_ptr<const shared_model::interface::Block> block) {
+        SharedPtrCounter<const shared_model::interface::Block> block) {
       return withSavepoint([&] {
         return this->apply(block, [](const auto &, auto &) { return true; });
       });
     }
 
     bool MutableStorageImpl::apply(
-        rxcpp::observable<std::shared_ptr<shared_model::interface::Block>>
+        rxcpp::observable<SharedPtrCounter<shared_model::interface::Block>>
             blocks,
         MutableStoragePredicate predicate) {
       try {

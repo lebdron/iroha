@@ -115,7 +115,7 @@ namespace iroha {
             auto network_chain_with_updates =
                 retrieve_blocks_result.assumeValue().tap(
                     [&my_height, &got_some_blocks_from_this_peer](
-                        const std::shared_ptr<shared_model::interface::Block>
+                        const SharedPtrCounter<shared_model::interface::Block>
                             &block) {
                       got_some_blocks_from_this_peer = true;
                       my_height = block->height();

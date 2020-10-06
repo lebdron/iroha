@@ -18,10 +18,10 @@ namespace iroha {
     using shared_model::converters::protobuf::jsonToProto;
     using shared_model::interface::Block;
 
-    iroha::expected::Result<std::unique_ptr<Block>, std::string>
+    iroha::expected::Result<UniquePtrCounter<Block>, std::string>
     BlockLoader::parseBlock(const std::string &data) {
       return jsonToProto<iroha::protocol::Block>(data) | [](auto &&block)
-                 -> std::unique_ptr<shared_model::interface::Block> {
+                 -> UniquePtrCounter<shared_model::interface::Block> {
         return std::make_unique<shared_model::proto::Block>(
             std::move(block.block_v1()));
       };

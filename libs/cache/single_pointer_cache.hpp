@@ -9,6 +9,8 @@
 #include <memory>
 #include <mutex>
 
+#include "obj_counter.hpp"
+
 namespace iroha {
   namespace cache {
 
@@ -22,7 +24,7 @@ namespace iroha {
       /**
        * Pointer to data type
        */
-      using DataPointer = std::shared_ptr<std::decay_t<DataType>>;
+      using DataPointer = SharedPtrCounter<std::decay_t<DataType>>;
 
       /**
        * Insert data to the cache
@@ -67,7 +69,7 @@ namespace iroha {
     void SinglePointerCache<DataType>::release() {
       std::lock_guard<std::mutex> lock(mutex_);
 
-      stored_data_.reset();
+      stored_data_ = {};
     }
 
   }  // namespace cache

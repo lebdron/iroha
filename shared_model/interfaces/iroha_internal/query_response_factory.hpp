@@ -103,7 +103,7 @@ namespace shared_model {
        * @return block response
        */
       virtual std::unique_ptr<QueryResponse> createBlockResponse(
-          std::unique_ptr<Block> block,
+          UniquePtrCounter<Block> block,
           const crypto::Hash &query_hash) const = 0;
 
       /**
@@ -251,7 +251,7 @@ namespace shared_model {
        * @return block query response with block
        */
       virtual std::unique_ptr<BlockQueryResponse> createBlockQueryResponse(
-          std::shared_ptr<const Block> block) const = 0;
+          SharedPtrCounter<const Block> block) const = 0;
 
       /**
        * Create response for block query with error

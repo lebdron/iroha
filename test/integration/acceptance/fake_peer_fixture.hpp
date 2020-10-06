@@ -16,7 +16,7 @@
 
 template <size_t N>
 void checkBlockHasNTxs(
-    const std::shared_ptr<const shared_model::interface::Block> &block) {
+    const SharedPtrCounter<const shared_model::interface::Block> &block) {
   ASSERT_EQ(block->transactions().size(), N);
 }
 

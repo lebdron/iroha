@@ -52,7 +52,7 @@ namespace iroha {
        * @return true if inserted
        */
       virtual iroha::expected::Result<void, std::string> insertBlock(
-          std::shared_ptr<const shared_model::interface::Block> block) = 0;
+          SharedPtrCounter<const shared_model::interface::Block> block) = 0;
 
       /**
        * Create new command executor that holds a database session within.
@@ -85,7 +85,7 @@ namespace iroha {
        * @return observable with the Block committed
        */
       virtual rxcpp::observable<
-          std::shared_ptr<const shared_model::interface::Block>>
+          SharedPtrCounter<const shared_model::interface::Block>>
       on_commit() = 0;
 
       /**

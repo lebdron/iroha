@@ -35,7 +35,7 @@ BlockLoaderImpl::BlockLoaderImpl(
       client_factory_(std::move(client_factory)),
       log_(std::move(log)) {}
 
-Result<rxcpp::observable<std::shared_ptr<Block>>, std::string>
+Result<rxcpp::observable<SharedPtrCounter<Block>>, std::string>
 BlockLoaderImpl::retrieveBlocks(
     const shared_model::interface::types::HeightType height,
     types::PublicKeyHexStringView peer_pubkey) {
@@ -43,8 +43,8 @@ BlockLoaderImpl::retrieveBlocks(
     return client_factory_->createClient(*peer) | [&](auto client) {
       std::shared_ptr<typename decltype(client)::element_type> shared_client(
           std::move(client));
-      return rxcpp::observable<std::shared_ptr<Block>>(
-          rxcpp::observable<>::create<std::shared_ptr<Block>>(
+      return rxcpp::observable<SharedPtrCounter<Block>>(
+          rxcpp::observable<>::create<SharedPtrCounter<Block>>(
               [height, shared_client, block_factory = block_factory_](
                   auto subscriber) {
                 grpc::ClientContext context;
@@ -75,7 +75,7 @@ BlockLoaderImpl::retrieveBlocks(
   };
 }
 
-Result<std::unique_ptr<Block>, std::string> BlockLoaderImpl::retrieveBlock(
+Result<UniquePtrCounter<Block>, std::string> BlockLoaderImpl::retrieveBlock(
     types::PublicKeyHexStringView peer_pubkey, types::HeightType block_height) {
   return findPeer(peer_pubkey) | [&](const auto &peer) {
     proto::BlockRequest request;
@@ -86,7 +86,7 @@ Result<std::unique_ptr<Block>, std::string> BlockLoaderImpl::retrieveBlock(
     request.set_height(block_height);
 
     return client_factory_->createClient(*peer) | [&](auto &&client)
-               -> Result<std::unique_ptr<Block>, std::string> {
+               -> Result<UniquePtrCounter<Block>, std::string> {
       auto status = client->retrieveBlock(&context, request, &block);
       if (not status.ok()) {
         return makeError(

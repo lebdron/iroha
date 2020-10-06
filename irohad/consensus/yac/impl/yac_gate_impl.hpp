@@ -66,7 +66,7 @@ namespace iroha {
 
         logger::LoggerPtr log_;
 
-        boost::optional<std::shared_ptr<shared_model::interface::Block>>
+        boost::optional<SharedPtrCounter<shared_model::interface::Block>>
             current_block_;
         YacHash current_hash_;
         boost::optional<ClusterOrdering> alternative_order_;

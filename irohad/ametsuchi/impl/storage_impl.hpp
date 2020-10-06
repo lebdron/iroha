@@ -80,7 +80,7 @@ namespace iroha {
               response_factory) const override;
 
       iroha::expected::Result<void, std::string> insertBlock(
-          std::shared_ptr<const shared_model::interface::Block> block) override;
+          SharedPtrCounter<const shared_model::interface::Block> block) override;
 
       expected::Result<void, std::string> insertPeer(
           const shared_model::interface::Peer &peer) override;
@@ -104,13 +104,13 @@ namespace iroha {
       bool preparedCommitEnabled() const override;
 
       CommitResult commitPrepared(
-          std::shared_ptr<const shared_model::interface::Block> block) override;
+          SharedPtrCounter<const shared_model::interface::Block> block) override;
 
       std::shared_ptr<WsvQuery> getWsvQuery() const override;
 
       std::shared_ptr<BlockQuery> getBlockQuery() const override;
 
-      rxcpp::observable<std::shared_ptr<const shared_model::interface::Block>>
+      rxcpp::observable<SharedPtrCounter<const shared_model::interface::Block>>
       on_commit() override;
 
       void prepareBlock(std::unique_ptr<TemporaryWsv> wsv) override;
@@ -143,7 +143,7 @@ namespace iroha {
        * add block to block storage
        */
       StoreBlockResult storeBlock(
-          std::shared_ptr<const shared_model::interface::Block> block);
+          SharedPtrCounter<const shared_model::interface::Block> block);
 
       /**
        * Method tries to perform rollback on passed session
@@ -159,7 +159,7 @@ namespace iroha {
 
       rxcpp::composite_subscription notifier_lifetime_;
       rxcpp::subjects::subject<
-          std::shared_ptr<const shared_model::interface::Block>>
+          SharedPtrCounter<const shared_model::interface::Block>>
           notifier_;
 
       std::shared_ptr<shared_model::interface::PermissionToString>

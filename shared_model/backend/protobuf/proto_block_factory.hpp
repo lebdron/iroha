@@ -26,7 +26,7 @@ namespace shared_model {
           std::unique_ptr<shared_model::validation::AbstractValidator<
               iroha::protocol::Block>> proto_validator);
 
-      std::unique_ptr<interface::Block> unsafeCreateBlock(
+      UniquePtrCounter<interface::Block> unsafeCreateBlock(
           interface::types::HeightType height,
           const interface::types::HashType &prev_hash,
           interface::types::TimestampType created_time,
@@ -40,7 +40,7 @@ namespace shared_model {
        * @return Pointer to block.
        *         Error if block is invalid
        */
-      iroha::expected::Result<std::unique_ptr<interface::Block>, std::string>
+      iroha::expected::Result<UniquePtrCounter<interface::Block>, std::string>
       createBlock(iroha::protocol::Block block);
 
      private:

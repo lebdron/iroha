@@ -11,9 +11,11 @@
 #include "block.pb.h"
 #include "interfaces/common_objects/types.hpp"
 
+#include "obj_counter.hpp"
+
 namespace shared_model {
   namespace proto {
-    class Block final : public interface::Block {
+    class Block final : public interface::Block, public ::ObjCounter<Block> {
      public:
       using TransportType = iroha::protocol::Block_v1;
 
