@@ -23,7 +23,6 @@ namespace shared_model::interface {
   class AppendRole;
   class CompareAndSetAccountDetail;
   class CallEngine;
-  class CallModel;
   class CreateAccount;
   class CreateAsset;
   class CreateDomain;
@@ -218,14 +217,6 @@ namespace iroha::ametsuchi {
         const shared_model::interface::SetSettingValue &command,
         const shared_model::interface::types::AccountIdType &creator_account_id,
         const std::string &,
-        shared_model::interface::types::CommandIndexType,
-        bool do_validation,
-        shared_model::interface::RolePermissionSet const &creator_permissions);
-
-    CommandResult operator()(
-        const shared_model::interface::CallModel &command,
-        const shared_model::interface::types::AccountIdType &creator_account_id,
-        const std::string &tx_hash,
         shared_model::interface::types::CommandIndexType,
         bool do_validation,
         shared_model::interface::RolePermissionSet const &creator_permissions);

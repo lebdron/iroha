@@ -17,7 +17,6 @@
 #include "interfaces/commands/add_signatory.hpp"
 #include "interfaces/commands/append_role.hpp"
 #include "interfaces/commands/call_engine.hpp"
-#include "interfaces/commands/call_model.hpp"
 #include "interfaces/commands/command.hpp"
 #include "interfaces/commands/compare_and_set_account_detail.hpp"
 #include "interfaces/commands/create_account.hpp"
@@ -515,15 +514,6 @@ CommandResult RocksDbCommandExecutor::operator()(
     const shared_model::interface::types::AccountIdType &creator_account_id,
     const std::string &tx_hash,
     shared_model::interface::types::CommandIndexType cmd_index,
-    bool do_validation,
-    shared_model::interface::RolePermissionSet const &creator_permissions){
-    IROHA_ERROR_NOT_IMPLEMENTED()}
-
-CommandResult RocksDbCommandExecutor::operator()(
-    const shared_model::interface::CallModel &command,
-    const shared_model::interface::types::AccountIdType &creator_account_id,
-    const std::string &tx_hash,
-    shared_model::interface::types::CommandIndexType,
     bool do_validation,
     shared_model::interface::RolePermissionSet const &creator_permissions){
     IROHA_ERROR_NOT_IMPLEMENTED()}
