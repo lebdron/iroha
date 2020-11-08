@@ -21,11 +21,16 @@ namespace iroha {
     }
 
     std::vector<std::string_view> splitId(std::string_view id) {
-      std::string_view delims{"@#"};
-      std::vector<std::string_view> output;
-      output.reserve(2);
+      return split(id, "@#");
+    }
 
-      for (auto first = id.data(), second = id.data(), last = first + id.size();
+    std::vector<std::string_view> split(std::string_view str,
+                                        std::string_view delims) {
+      std::vector<std::string_view> output;
+
+      for (auto first = str.data(),
+                second = str.data(),
+                last = first + str.size();
            second != last && first != last;
            first = second + 1) {
         second = std::find_first_of(

@@ -15,7 +15,6 @@
 #include "backend/protobuf/proto_permission_to_string.hpp"
 #include "backend/protobuf/proto_query_response_factory.hpp"
 #include "common/result.hpp"
-#include "framework/result_gtest_checkers.hpp"
 #include "framework/test_db_manager.hpp"
 #include "framework/test_logger.hpp"
 #include "logger/logger_manager.hpp"

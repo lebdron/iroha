@@ -11,6 +11,7 @@
 #include <rocksdb/utilities/transaction.h>
 #include "ametsuchi/impl/executor_common.hpp"
 #include "ametsuchi/impl/rocksdb_common.hpp"
+#include "ametsuchi/setting_query.hpp"
 #include "ametsuchi/vm_caller.hpp"
 #include "interfaces/commands/add_asset_quantity.hpp"
 #include "interfaces/commands/add_peer.hpp"
@@ -77,6 +78,25 @@ using shared_model::interface::RolePermissionSet;
   IROHA_ERROR_IF_CONDITION(          \
       not creator_permissions.isSet(elem), 2, command.toString(), "")
 
+#define IROHA_ERROR_IF_NOT_ROLE_OR_GRANTABLE_SET(role, grantable) \
+  IROHA_ERROR_IF_CONDITION(                                       \
+      not(creator_permissions.isSet(role)                         \
+          or granted_account_permissions.isSet(grantable)),       \
+      2,                                                          \
+      command.toString(),                                         \
+      "")
+
+#define IROHA_ERROR_IF_NOT_GRANTABLE_SET(elem) \
+  IROHA_ERROR_IF_NOT_ROLE_OR_GRANTABLE_SET(Role::kRoot, elem)
+
+#define IROHA_ERROR_IF_ANY_NOT_SET(all, domain)                             \
+  IROHA_ERROR_IF_CONDITION(not((creator_permissions.isSet(all))             \
+                               or (domain_id == creator_domain_id           \
+                                   and creator_permissions.isSet(domain))), \
+                           2,                                               \
+                           command.toString(),                              \
+                           "")
+
 RocksDbCommandExecutor::RocksDbCommandExecutor(
     rocksdb::Transaction &db_transaction,
     std::shared_ptr<shared_model::interface::PermissionToString> perm_converter,
@@ -127,8 +147,70 @@ CommandResult RocksDbCommandExecutor::operator()(
     const std::string &tx_hash,
     shared_model::interface::types::CommandIndexType cmd_index,
     bool do_validation,
-    shared_model::interface::RolePermissionSet const &creator_permissions){
-    IROHA_ERROR_NOT_IMPLEMENTED()}
+    shared_model::interface::RolePermissionSet const &creator_permissions) {
+  RocksDbCommon common(db_transaction_, key_buffer_, value_buffer_);
+  rocksdb::Status status;
+  auto creator_names = splitId(creator_account_id);
+  auto &creator_account_name = creator_names.at(0);
+  auto &creator_domain_id = creator_names.at(1);
+
+  auto names = splitId(command.assetId());
+  auto &asset_name = names.at(0);
+  auto &domain_id = names.at(1);
+  auto &amount = command.amount();
+
+  shared_model::interface::Amount result("");
+
+  if (do_validation) {
+    IROHA_ERROR_IF_ANY_NOT_SET(Role::kAddAssetQty, Role::kAddDomainAssetQty)
+  }
+
+  // check if asset exists
+  status = common.get(fmtstrings::kAsset, domain_id, asset_name);
+  IROHA_ERROR_IF_NOT_FOUND(3)
+
+  uint64_t precision;
+  common.decode(precision);
+  result = shared_model::interface::Amount(precision);
+
+  uint64_t account_asset_size = 0;
+  status = common.get(
+      fmtstrings::kAccountAssetSize, creator_domain_id, creator_account_name);
+  if (status.ok()) {
+    common.decode(account_asset_size);
+  } else if (not status.IsNotFound()) {
+    IROHA_ERROR_IF_NOT_OK()
+  }
+
+  status = common.get(fmtstrings::kAccountAsset,
+                      creator_domain_id,
+                      creator_account_name,
+                      command.assetId());
+  if (status.ok()) {
+    result = shared_model::interface::Amount(value_buffer_);
+  } else if (status.IsNotFound()) {
+    ++account_asset_size;
+  } else {
+    IROHA_ERROR_IF_NOT_OK()
+  }
+
+  result += amount;
+  value_buffer_.assign(result.toStringRepr());
+  IROHA_ERROR_IF_CONDITION(value_buffer_[0] == 'N', 4, command.toString(), "")
+
+  status = common.put(fmtstrings::kAccountAsset,
+                      creator_domain_id,
+                      creator_account_name,
+                      command.assetId());
+  IROHA_ERROR_IF_NOT_OK()
+
+  common.encode(account_asset_size);
+  status = common.put(
+      fmtstrings::kAccountAssetSize, creator_domain_id, creator_account_name);
+  IROHA_ERROR_IF_NOT_OK()
+
+  return {};
+}
 
 CommandResult RocksDbCommandExecutor::operator()(
     const shared_model::interface::AddPeer &command,
@@ -273,8 +355,30 @@ CommandResult RocksDbCommandExecutor::operator()(
     const std::string &tx_hash,
     shared_model::interface::types::CommandIndexType cmd_index,
     bool do_validation,
-    shared_model::interface::RolePermissionSet const &creator_permissions){
-    IROHA_ERROR_NOT_IMPLEMENTED()}
+    shared_model::interface::RolePermissionSet const &creator_permissions) {
+  RocksDbCommon common(db_transaction_, key_buffer_, value_buffer_);
+
+  auto &domain_id = command.domainId();
+  auto &asset_name = command.assetName();
+
+  if (do_validation) {
+    IROHA_ERROR_IF_NOT_SET(Role::kCreateAsset)
+
+    // check if asset already exists
+    auto status = common.get(fmtstrings::kAsset, domain_id, asset_name);
+    IROHA_ERROR_IF_FOUND(3)
+
+    // check if domain exists
+    status = common.get(fmtstrings::kDomain, domain_id);
+    IROHA_ERROR_IF_NOT_FOUND(4)
+  }
+
+  common.encode(command.precision());
+  auto status = common.put(fmtstrings::kAsset, domain_id, asset_name);
+  IROHA_ERROR_IF_NOT_OK()
+
+  return {};
+}
 
 CommandResult RocksDbCommandExecutor::operator()(
     const shared_model::interface::CreateDomain &command,
@@ -488,8 +592,52 @@ CommandResult RocksDbCommandExecutor::operator()(
     const std::string &tx_hash,
     shared_model::interface::types::CommandIndexType cmd_index,
     bool do_validation,
-    shared_model::interface::RolePermissionSet const &creator_permissions){
-    IROHA_ERROR_NOT_IMPLEMENTED()}
+    shared_model::interface::RolePermissionSet const &creator_permissions) {
+  RocksDbCommon common(db_transaction_, key_buffer_, value_buffer_);
+
+  auto creator_names = splitId(creator_account_id);
+  auto &creator_account_name = creator_names.at(0);
+  auto &creator_domain_id = creator_names.at(1);
+
+  auto names = splitId(command.accountId());
+  auto &account_name = names.at(0);
+  auto &domain_id = names.at(1);
+
+  if (do_validation) {
+    if (command.accountId() != creator_account_id) {
+      GrantablePermissionSet granted_account_permissions;
+
+      auto status = common.get(fmtstrings::kGranted,
+                               creator_domain_id,
+                               creator_account_name,
+                               domain_id,
+                               account_name);
+      if (status.ok()) {
+        granted_account_permissions = GrantablePermissionSet{value_buffer_};
+      } else if (not status.IsNotFound()) {
+        IROHA_ERROR_IF_NOT_OK()
+      }
+
+      IROHA_ERROR_IF_NOT_ROLE_OR_GRANTABLE_SET(Role::kSetDetail,
+                                               Grantable::kSetMyAccountDetail)
+    }
+
+    // check if account exists
+    auto status = common.get(fmtstrings::kQuorum, domain_id, account_name);
+    IROHA_ERROR_IF_NOT_FOUND(3)
+  }
+
+  value_buffer_.assign(command.value());
+  auto status = common.put(fmtstrings::kAccountDetail,
+                           domain_id,
+                           account_name,
+                           creator_domain_id,
+                           creator_account_name,
+                           command.key());
+  IROHA_ERROR_IF_NOT_OK()
+
+  return {};
+}
 
 CommandResult RocksDbCommandExecutor::operator()(
     const shared_model::interface::SetQuorum &command,
@@ -515,8 +663,143 @@ CommandResult RocksDbCommandExecutor::operator()(
     const std::string &tx_hash,
     shared_model::interface::types::CommandIndexType cmd_index,
     bool do_validation,
-    shared_model::interface::RolePermissionSet const &creator_permissions){
-    IROHA_ERROR_NOT_IMPLEMENTED()}
+    shared_model::interface::RolePermissionSet const &creator_permissions) {
+  RocksDbCommon common(db_transaction_, key_buffer_, value_buffer_);
+  rocksdb::Status status;
+  auto creator_names = splitId(creator_account_id);
+  auto &creator_account_name = creator_names.at(0);
+  auto &creator_domain_id = creator_names.at(1);
+
+  auto source_names = splitId(command.srcAccountId());
+  auto &source_account_name = source_names.at(0);
+  auto &source_domain_id = source_names.at(1);
+
+  auto destination_names = splitId(command.destAccountId());
+  auto &destination_account_name = destination_names.at(0);
+  auto &destination_domain_id = destination_names.at(1);
+
+  auto names = splitId(command.assetId());
+  auto &asset_name = names.at(0);
+  auto &domain_id = names.at(1);
+  auto &amount = command.amount();
+  auto &description = command.description();
+
+  if (do_validation) {
+    // check if destination account exists
+    status = common.get(
+        fmtstrings::kQuorum, destination_domain_id, destination_account_name);
+    IROHA_ERROR_IF_NOT_FOUND(4)
+
+    // get account permissions
+    auto status = common.get(fmtstrings::kPermissions,
+                             destination_domain_id,
+                             destination_account_name);
+    IROHA_ERROR_IF_NOT_OK()
+    auto destination_permissions = RolePermissionSet{value_buffer_};
+    IROHA_ERROR_IF_CONDITION(not destination_permissions.isSet(Role::kReceive),
+                             2,
+                             command.toString(),
+                             "")
+
+    if (command.srcAccountId() != creator_account_id) {
+      // check if source account exists
+      status = common.get(
+          fmtstrings::kQuorum, source_domain_id, source_account_name);
+      IROHA_ERROR_IF_NOT_FOUND(3)
+
+      GrantablePermissionSet granted_account_permissions;
+      auto status = common.get(fmtstrings::kGranted,
+                               creator_domain_id,
+                               creator_account_name,
+                               source_domain_id,
+                               source_account_name);
+      if (status.ok()) {
+        granted_account_permissions = GrantablePermissionSet{value_buffer_};
+      } else if (not status.IsNotFound()) {
+        IROHA_ERROR_IF_NOT_OK()
+      }
+      IROHA_ERROR_IF_NOT_GRANTABLE_SET(Grantable::kTransferMyAssets)
+    } else {
+      IROHA_ERROR_IF_NOT_SET(Role::kTransfer)
+    }
+
+    // check if asset exists
+    status = common.get(fmtstrings::kAsset, domain_id, asset_name);
+    IROHA_ERROR_IF_NOT_FOUND(5)
+
+    status = common.get(fmtstrings::kSetting,
+                        iroha::ametsuchi::kMaxDescriptionSizeKey);
+    if (status.ok()) {
+      uint64_t max_description_size;
+      common.decode(max_description_size);
+      IROHA_ERROR_IF_CONDITION(
+          description.size() > max_description_size, 8, command.toString(), "")
+    } else if (not status.IsNotFound()) {
+      IROHA_ERROR_IF_NOT_OK()
+    }
+  }
+
+  status = common.get(fmtstrings::kAccountAsset,
+                      source_domain_id,
+                      source_account_name,
+                      command.assetId());
+  IROHA_ERROR_IF_NOT_FOUND(6)
+  shared_model::interface::Amount source_balance(value_buffer_);
+
+  source_balance -= amount;
+  IROHA_ERROR_IF_CONDITION(
+      source_balance.toStringRepr()[0] == 'N', 6, command.toString(), "")
+
+  uint64_t account_asset_size = 0;
+  status = common.get(fmtstrings::kAccountAssetSize,
+                      destination_domain_id,
+                      destination_account_name);
+  if (status.ok()) {
+    common.decode(account_asset_size);
+  } else if (not status.IsNotFound()) {
+    IROHA_ERROR_IF_NOT_OK()
+  }
+
+  shared_model::interface::Amount destination_balance(
+      source_balance.precision());
+  status = common.get(fmtstrings::kAccountAsset,
+                      destination_domain_id,
+                      destination_account_name,
+                      command.assetId());
+  if (status.ok()) {
+    destination_balance = shared_model::interface::Amount(value_buffer_);
+  } else if (status.IsNotFound()) {
+    ++account_asset_size;
+  } else {
+    IROHA_ERROR_IF_NOT_OK()
+  }
+
+  destination_balance += amount;
+  IROHA_ERROR_IF_CONDITION(
+      destination_balance.toStringRepr()[0] == 'N', 7, command.toString(), "")
+
+  value_buffer_.assign(source_balance.toStringRepr());
+  status = common.put(fmtstrings::kAccountAsset,
+                      source_domain_id,
+                      source_account_name,
+                      command.assetId());
+  IROHA_ERROR_IF_NOT_OK()
+
+  value_buffer_.assign(destination_balance.toStringRepr());
+  status = common.put(fmtstrings::kAccountAsset,
+                      destination_domain_id,
+                      destination_account_name,
+                      command.assetId());
+  IROHA_ERROR_IF_NOT_OK()
+
+  common.encode(account_asset_size);
+  status = common.put(fmtstrings::kAccountAssetSize,
+                      destination_domain_id,
+                      destination_account_name);
+  IROHA_ERROR_IF_NOT_OK()
+
+  return {};
+}
 
 CommandResult RocksDbCommandExecutor::operator()(
     const shared_model::interface::SetSettingValue &command,
@@ -525,5 +808,15 @@ CommandResult RocksDbCommandExecutor::operator()(
     shared_model::interface::types::CommandIndexType,
     bool do_validation,
     shared_model::interface::RolePermissionSet const &creator_permissions) {
-  IROHA_ERROR_NOT_IMPLEMENTED()
+  RocksDbCommon common(db_transaction_, key_buffer_, value_buffer_);
+  rocksdb::Status status;
+
+  auto &key = command.key();
+  auto &value = command.value();
+
+  value_buffer_.assign(value);
+  status = common.put(fmtstrings::kSetting, key);
+  IROHA_ERROR_IF_NOT_OK()
+
+  return {};
 }

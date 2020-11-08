@@ -71,6 +71,9 @@ TestDbManager::createWithRandomDbName(
           };
     if (iroha::expected::hasValue(create_db_result)) {
       return std::move(create_db_result).assumeValue();
+    } else {
+      log_manager->getLogger()->debug("Failed to create database: {}",
+                                      create_db_result.assumeError());
     }
   }
   return makeError(

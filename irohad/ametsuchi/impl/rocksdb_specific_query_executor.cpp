@@ -7,9 +7,13 @@
 
 #include <boost/algorithm/string.hpp>
 #include <fmt/core.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 #include <rocksdb/utilities/transaction.h>
 #include "ametsuchi/impl/executor_common.hpp"
 #include "ametsuchi/impl/rocksdb_common.hpp"
+#include "common/bind.hpp"
+#include "interfaces/common_objects/amount.hpp"
 #include "interfaces/queries/asset_pagination_meta.hpp"
 #include "interfaces/queries/get_account.hpp"
 #include "interfaces/queries/get_account_asset_transactions.hpp"
@@ -57,11 +61,21 @@ using shared_model::interface::RolePermissionSet;
       status.IsNotFound(),                                                \
       type,                                                               \
       fmt::format("{}, status: {}", query.toString(), status.ToString()), \
-      code)
+      code)                                                               \
+  IROHA_ERROR_IF_NOT_OK()
 #define IROHA_ERROR_IF_NOT_SET(elem)                            \
   IROHA_ERROR_IF_CONDITION(not creator_permissions.isSet(elem), \
                            ErrorQueryType::kStatefulFailed,     \
                            query.toString(),                    \
+                           2)
+#define IROHA_ERROR_IF_ANY_NOT_SET(all, domain, my)                       \
+  IROHA_ERROR_IF_CONDITION(not((creator_permissions.isSet(all))           \
+                               or (domain_id == creator_domain_id         \
+                                   and creator_permissions.isSet(domain)) \
+                               or (query.accountId() == creator_id        \
+                                   and creator_permissions.isSet(my))),   \
+                           ErrorQueryType::kStatefulFailed,               \
+                           query.toString(),                              \
                            2)
 
 RocksDbSpecificQueryExecutor::RocksDbSpecificQueryExecutor(
@@ -123,8 +137,44 @@ QueryExecutorResult RocksDbSpecificQueryExecutor::operator()(
     const shared_model::interface::GetAccount &query,
     const shared_model::interface::types::AccountIdType &creator_id,
     const shared_model::interface::types::HashType &query_hash,
-    shared_model::interface::RolePermissionSet const &creator_permissions){
-    IROHA_ERROR_NOT_IMPLEMENTED()}
+    shared_model::interface::RolePermissionSet const &creator_permissions) {
+  RocksDbCommon common(db_transaction_, key_buffer_, value_buffer_);
+  auto creator_names = splitId(creator_id);
+  auto &creator_account_name = creator_names.at(0);
+  auto &creator_domain_id = creator_names.at(1);
+
+  auto names = splitId(query.accountId());
+  auto &account_name = names.at(0);
+  auto &domain_id = names.at(1);
+
+  IROHA_ERROR_IF_ANY_NOT_SET(
+      Role::kGetAllAccounts, Role::kGetDomainAccounts, Role::kGetMyAccount);
+
+  // get quorum
+  uint64_t quorum;
+  auto status = common.get(fmtstrings::kQuorum, domain_id, account_name);
+  IROHA_ERROR_IF_NOT_FOUND(ErrorQueryType::kNoAccount, 0)
+  common.decode(quorum);
+
+  // TODO reuse buffer
+  rapidjson::StringBuffer s;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(s);
+
+  writer.StartObject();
+
+  writer.EndObject();
+
+  std::vector<std::string> roles;
+  // TODO fill roles
+
+  return query_response_factory_->createAccountResponse(
+      query.accountId(),
+      shared_model::interface::types::DomainIdType(domain_id),
+      quorum,
+      s.GetString(),
+      roles,
+      query_hash);
+}
 
 QueryExecutorResult RocksDbSpecificQueryExecutor::operator()(
     const shared_model::interface::GetBlock &query,
@@ -137,8 +187,39 @@ QueryExecutorResult RocksDbSpecificQueryExecutor::operator()(
     const shared_model::interface::GetSignatories &query,
     const shared_model::interface::types::AccountIdType &creator_id,
     const shared_model::interface::types::HashType &query_hash,
-    shared_model::interface::RolePermissionSet const &creator_permissions){
-    IROHA_ERROR_NOT_IMPLEMENTED()}
+    shared_model::interface::RolePermissionSet const &creator_permissions) {
+  RocksDbCommon common(db_transaction_, key_buffer_, value_buffer_);
+  auto creator_names = splitId(creator_id);
+  auto &creator_account_name = creator_names.at(0);
+  auto &creator_domain_id = creator_names.at(1);
+
+  auto names = splitId(query.accountId());
+  auto &account_name = names.at(0);
+  auto &domain_id = names.at(1);
+
+  IROHA_ERROR_IF_ANY_NOT_SET(Role::kGetAllSignatories,
+                             Role::kGetDomainSignatories,
+                             Role::kGetMySignatories);
+
+  std::vector<std::string> signatories;
+  auto it = common.seek(fmtstrings::kSignatory, domain_id, account_name, "");
+  auto status = it->status();
+  IROHA_ERROR_IF_NOT_OK()
+  rocksdb::Slice key_buffer_slice(key_buffer_.data(), key_buffer_.size());
+  for (; it->Valid() and it->key().starts_with(key_buffer_slice); it->Next()) {
+    auto key = it->key();
+    signatories.emplace_back(key.data() + key_buffer_slice.size(),
+                             key.size() - key_buffer_slice.size());
+  }
+  status = it->status();
+  IROHA_ERROR_IF_NOT_OK()
+
+  status = signatories.empty() ? rocksdb::Status::NotFound() : status;
+  IROHA_ERROR_IF_NOT_FOUND(ErrorQueryType::kNoSignatories, 0)
+
+  return query_response_factory_->createSignatoriesResponse(signatories,
+                                                            query_hash);
+}
 
 QueryExecutorResult RocksDbSpecificQueryExecutor::operator()(
     const shared_model::interface::GetAccountTransactions &query,
@@ -165,8 +246,81 @@ QueryExecutorResult RocksDbSpecificQueryExecutor::operator()(
     const shared_model::interface::GetAccountAssets &query,
     const shared_model::interface::types::AccountIdType &creator_id,
     const shared_model::interface::types::HashType &query_hash,
-    shared_model::interface::RolePermissionSet const &creator_permissions){
-    IROHA_ERROR_NOT_IMPLEMENTED()}
+    shared_model::interface::RolePermissionSet const &creator_permissions) {
+  RocksDbCommon common(db_transaction_, key_buffer_, value_buffer_);
+  rocksdb::Status status;
+  auto creator_names = splitId(creator_id);
+  auto &creator_account_name = creator_names.at(0);
+  auto &creator_domain_id = creator_names.at(1);
+
+  auto names = splitId(query.accountId());
+  auto &account_name = names.at(0);
+  auto &domain_id = names.at(1);
+
+  IROHA_ERROR_IF_ANY_NOT_SET(
+      Role::kGetAllAccAst, Role::kGetDomainAccAst, Role::kGetMyAccAst);
+
+  uint64_t account_asset_size = 0;
+  status = common.get(fmtstrings::kAccountAssetSize, domain_id, account_name);
+  if (status.ok()) {
+    common.decode(account_asset_size);
+  } else if (not status.IsNotFound()) {
+    IROHA_ERROR_IF_NOT_OK()
+  }
+
+  const auto pagination_meta{query.paginationMeta()};
+  const auto req_first_asset_id =
+      pagination_meta | [](auto const &pagination_meta) {
+        return pagination_meta.get().firstAssetId();
+      };
+  const auto req_page_size =  // TODO 2019.05.31 mboldyrev make it
+                              // non-optional after IR-516
+      pagination_meta | [](const auto &pagination_meta) {
+        return std::optional<size_t>(pagination_meta.get().pageSize());
+      };
+
+  std::vector<std::tuple<shared_model::interface::types::AccountIdType,
+                         shared_model::interface::types::AssetIdType,
+                         shared_model::interface::Amount>>
+      assets;
+  auto it = common.seek(fmtstrings::kAccountAsset,
+                        domain_id,
+                        account_name,
+                        req_first_asset_id.value_or(""));
+  auto prefix_size = key_buffer_.size()
+      - (req_first_asset_id |
+         [](auto const &first_asset_id) { return first_asset_id.size(); });
+  status = it->status();
+  IROHA_ERROR_IF_NOT_OK()
+  rocksdb::Slice key_buffer_slice(key_buffer_.data(), prefix_size);
+  for (; it->Valid() and it->key().starts_with(key_buffer_slice)
+       and (not req_page_size or assets.size() < req_page_size.value());
+       it->Next()) {
+    auto key = it->key();
+    auto asset = std::string_view(key.data() + key_buffer_slice.size(),
+                                  key.size() - key_buffer_slice.size());
+    assets.emplace_back(
+        query.accountId(),
+        asset,
+        shared_model::interface::Amount(it->value().ToStringView()));
+  }
+  std::optional<shared_model::interface::types::AssetIdType> next_asset_id;
+  if (pagination_meta and it->Valid()
+      and it->key().starts_with(key_buffer_slice)) {
+    auto key = it->key();
+    next_asset_id = std::string_view(key.data() + key_buffer_slice.size(),
+                                     key.size() - key_buffer_slice.size());
+  }
+  status = it->status();
+  IROHA_ERROR_IF_NOT_OK()
+
+  status = assets.empty() and req_first_asset_id ? rocksdb::Status::NotFound()
+                                                 : status;
+  IROHA_ERROR_IF_NOT_FOUND(ErrorQueryType::kStatefulFailed, 4)
+
+  return query_response_factory_->createAccountAssetResponse(
+      assets, account_asset_size, next_asset_id, query_hash);
+}
 
 QueryExecutorResult RocksDbSpecificQueryExecutor::operator()(
     const shared_model::interface::GetAccountDetail &query,
@@ -196,7 +350,6 @@ QueryExecutorResult RocksDbSpecificQueryExecutor::operator()(
   // get role permissions
   auto status = common.get(fmtstrings::kRole, role_id);
   IROHA_ERROR_IF_NOT_FOUND(ErrorQueryType::kNoRoles, 0)
-  IROHA_ERROR_IF_NOT_OK()
   RolePermissionSet role_permissions{value_buffer_};
 
   return query_response_factory_->createRolePermissionsResponse(

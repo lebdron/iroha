@@ -71,3 +71,17 @@ if(USE_LIBURSA)
         ursa
         )
 endif()
+
+add_executable(bm_postgres_executor bm_postgres_executor.cpp)
+target_link_libraries(bm_postgres_executor
+    benchmark::benchmark_main
+    executor_itf
+    executor_fixture_param_postgres
+    )
+
+add_executable(bm_rocksdb_executor bm_rocksdb_executor.cpp)
+target_link_libraries(bm_rocksdb_executor
+    benchmark::benchmark_main
+    executor_itf
+    executor_fixture_param_rocksdb
+    )

@@ -8,7 +8,7 @@ target_link_libraries(executor_fixture
 
 add_library(executor_fixture_param executor_fixture_param.cpp)
 target_link_libraries(executor_fixture_param
-    GTest::gtest
+    GTest::gmock
     )
 
 add_library(executor_fixture_param_postgres executor_fixture_param_postgres.cpp)
@@ -25,7 +25,9 @@ target_link_libraries(executor_fixture_param_postgres
 
 add_library(executor_fixture_param_rocksdb executor_fixture_param_rocksdb.cpp)
 target_link_libraries(executor_fixture_param_rocksdb
+    ametsuchi
     ametsuchi_rocksdb
+    executor_fixture_param
     Boost::filesystem
     )
 
@@ -156,6 +158,15 @@ target_link_libraries(get_signatories_test
 
 addtest(remove_signatory_test remove_signatory_test.cpp)
 target_link_libraries(remove_signatory_test
+    command_permission_test
+    common_test_constants
+    executor_fixture
+    executor_fixture_param_provider
+    )
+
+
+addtest(transfer_asset_test transfer_asset_test.cpp)
+target_link_libraries(transfer_asset_test
     command_permission_test
     common_test_constants
     executor_fixture

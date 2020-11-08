@@ -93,7 +93,7 @@ find_package(gflags 2.2.2 REQUIRED CONFIG)
 ##########################
 #        rx c++          #
 ##########################
-find_package(rxcpp)
+find_package(rxcpp CONFIG REQUIRED)
 
 ##########################
 #          TBB           #

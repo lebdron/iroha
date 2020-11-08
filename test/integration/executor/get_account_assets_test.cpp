@@ -99,7 +99,10 @@ struct GetAccountAssetsTest : public ExecutorTestBase {
       EXPECT_EQ(response.accountAssets()[i].assetId(),
                 this->makeAssetId(page_start + i));
       EXPECT_EQ(response.accountAssets()[i].balance(),
-                this->makeAssetQuantity(page_start + i));
+                this->makeAssetQuantity(page_start + i))
+          << "Expected "
+          << this->makeAssetQuantity(page_start + i).toStringRepr() << ", got "
+          << response.accountAssets()[i].balance().toStringRepr();
       EXPECT_EQ(response.accountAssets()[i].accountId(), kUserId);
     }
   }

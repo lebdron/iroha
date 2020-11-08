@@ -7,7 +7,6 @@
 #define TEST_INTEGRATION_EXECUTOR_FIXTURE_PARAM_POSTGRES_HPP
 
 #include "integration/executor/executor_fixture_param.hpp"
-#include "integration/executor/executor_fixture_param_provider.hpp"
 
 namespace soci {
   class session;

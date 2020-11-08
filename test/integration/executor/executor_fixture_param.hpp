@@ -8,7 +8,6 @@
 
 #include "framework/executor_itf/executor_itf_param.hpp"
 
-#include <gtest/gtest.h>
 #include "interfaces/common_objects/types.hpp"
 
 namespace iroha::ametsuchi {

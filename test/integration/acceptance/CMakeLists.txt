@@ -71,12 +71,6 @@ target_link_libraries(subtract_asset_qty_test
     integration_framework
     )
 
-addtest(transfer_asset_test transfer_asset_test.cpp)
-target_link_libraries(transfer_asset_test
-    acceptance_fixture
-    integration_framework
-    )
-
 addtest(tx_acceptance_test tx_acceptance_test.cpp)
 target_link_libraries(tx_acceptance_test
     acceptance_fixture

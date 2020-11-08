@@ -7,7 +7,6 @@
 #define TEST_INTEGRATION_EXECUTOR_FIXTURE_PARAM_ROCKSDB_HPP
 
 #include "integration/executor/executor_fixture_param.hpp"
-#include "integration/executor/executor_fixture_param_provider.hpp"
 
 namespace rocksdb {
   class OptimisticTransactionDB;

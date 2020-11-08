@@ -101,7 +101,9 @@ void ExecutorTestBase::checkAssetQuantities(
         [reference](const shared_model::interface::AccountAsset &tested) {
           if (tested.assetId() == reference.asset_id) {
             EXPECT_EQ(tested.balance(), reference.balance)
-                << "Wrong balance of asset " << reference.asset_id;
+                << "Wrong balance of asset " << reference.asset_id
+                << ", expected " << reference.balance.toStringRepr() << ", got "
+                << tested.balance().toStringRepr();
             return true;
           }
           return false;

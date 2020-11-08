@@ -36,11 +36,14 @@ namespace iroha::ametsuchi {
     static auto constexpr kAsset{
         FMT_STRING("asset/{}/{}")};  // domain_id/asset_name ➡️ precision
     static auto constexpr kAccountAsset{FMT_STRING(
-        "account_asset/{}/{}/{}/{}")};  // account_domain_id/account_name/asset_domain_id/asset_name
-                                        // ➡️ amount
+        "account_asset/{}/{}/{}")};  // account_domain_id/account_name/asset_id
+                                     // ➡️ amount
+    static auto constexpr kAccountAssetSize{
+        FMT_STRING("account_asset_size/{}/{}")};  // account_domain_id/account_name
+                                                  // ➡️ size
     static auto constexpr kAccountDetail{FMT_STRING(
-        "account_detail/{}/{}/{}/{}")};  // domain_id/account_name/writer_domain_id/writer_account_name/key
-                                         // ➡️ value
+        "account_detail/{}/{}/{}/{}/{}")};  // domain_id/account_name/writer_domain_id/writer_account_name/key
+                                            // ➡️ value
     static auto constexpr kPeer{
         FMT_STRING("peer/{}")};  // pubkey ➡️ address
     static auto constexpr kPermissions{FMT_STRING(
@@ -48,6 +51,8 @@ namespace iroha::ametsuchi {
     static auto constexpr kGranted{FMT_STRING(
         "granted/{}/{}/{}/{}")};  // domain_id/account_name/grantee_domain_id/grantee_account_name
                                   // ➡️ permissions
+    static auto constexpr kSetting{
+        FMT_STRING("setiing/{}")};  // key ➡️ value
   }  // namespace fmtstrings
 
   class RocksDbCommon {

@@ -1345,6 +1345,7 @@ namespace iroha {
             )
           SELECT CASE
               WHEN EXISTS (SELECT * FROM insert_dest LIMIT 1) THEN 0
+              WHEN EXISTS (SELECT * FROM checks WHERE not result and code = 4) THEN 4
               %s
               ELSE (SELECT code FROM checks WHERE not result ORDER BY code ASC LIMIT 1)
           END AS result)",

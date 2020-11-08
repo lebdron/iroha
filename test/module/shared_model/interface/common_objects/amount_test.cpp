@@ -59,4 +59,27 @@ TEST_F(AmountTest, Invalid) {
   checkInvalid(Amount{"1."});
   checkInvalid(Amount{"."});
   checkInvalid(Amount{""});
+  checkInvalid(Amount{std::string("0.").append(255, '0').append("1")});
+  checkInvalid(
+      Amount{"11579208923731619542357098500868790785326998466564056403945758400"
+             "7913129639936"});
+}
+
+TEST_F(AmountTest, Add) {
+  checkValid(Amount{"000.000"} += Amount{"1.0"}, 1, 3, "1.000");
+  checkValid(Amount{"000.000"} += Amount{"0.1"}, 1, 3, "0.100");
+  checkValid(Amount{"000.000"} += Amount{"0.01"}, 1, 3, "0.010");
+  checkInvalid(Amount{"000.000"} += Amount{"1.0001"});
+  checkInvalid(Amount{"11579208923731619542357098500868790785326998466564056403"
+                      "945758400791312963993.5"} += Amount{"0.1"});
+  checkInvalid(Amount{"11579208923731619542357098500868790785326998466564056403"
+                      "945758400791312963993.5"} += Amount{"1"});
+  checkInvalid(Amount{"0."
+                      "00000000000000000000000000000000000000000000000000000000"
+                      "00000000000000000000001"} += Amount{"1"});
+}
+
+TEST_F(AmountTest, Sub) {
+  checkValid(Amount{"1.000"} -= Amount{"0.1"}, 1, 3, "0.900");
+  checkInvalid(Amount{"1.000"} -= Amount{"2.0"});
 }
