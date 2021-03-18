@@ -9,6 +9,7 @@
 
 #include <boost/range/adaptor/filtered.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+#include <rxcpp/rx-observable.hpp>
 #include "backend/protobuf/deserialize_repeated_transactions.hpp"
 #include "backend/protobuf/proposal.hpp"
 #include "common/bind.hpp"
@@ -61,8 +62,11 @@ grpc::Status OnDemandOsServerGrpc::RequestProposal(
     ::grpc::ServerContext *context,
     const proto::ProposalRequest *request,
     proto::ProposalResponse *response) {
-  ordering_service_->onRequestProposal(
-      {request->round().block_round(), request->round().reject_round()})
+  ordering_service_
+          ->onRequestProposal(
+              {request->round().block_round(), request->round().reject_round()})
+          .as_blocking()
+          .first()
       | [&](auto &&proposal) {
           *response->mutable_proposal() =
               static_cast<const shared_model::proto::Proposal *>(proposal.get())

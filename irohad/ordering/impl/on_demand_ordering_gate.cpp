@@ -66,7 +66,9 @@ OnDemandOrderingGate::OnDemandOrderingGate(
 
             // request proposal for the current round
             auto proposal = this->processProposalRequest(
-                network_client_->onRequestProposal(event.next_round));
+                network_client_->onRequestProposal(event.next_round)
+                    .as_blocking()
+                    .first());
             // vote for the object received from the network
             proposal_notifier_.get_subscriber().on_next(
                 network::OrderingEvent{std::move(proposal),

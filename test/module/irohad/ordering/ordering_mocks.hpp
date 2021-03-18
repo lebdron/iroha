@@ -40,7 +40,8 @@ namespace iroha {
       MOCK_METHOD1(onBatches, void(CollectionType));
 
       MOCK_METHOD1(onRequestProposal,
-                   boost::optional<std::shared_ptr<const ProposalType>>(
+                   rxcpp::observable<
+                       boost::optional<std::shared_ptr<const ProposalType>>>(
                        consensus::Round));
 
       MOCK_METHOD1(onCollaborationOutcome, void(consensus::Round));

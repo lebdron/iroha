@@ -74,18 +74,24 @@ void OnDemandConnectionManager::onBatches(CollectionType batches) {
   propagate(kCommitCommitConsumer);
 }
 
-boost::optional<std::shared_ptr<const OnDemandConnectionManager::ProposalType>>
+rxcpp::observable<boost::optional<
+    std::shared_ptr<const OnDemandConnectionManager::ProposalType>>>
 OnDemandConnectionManager::onRequestProposal(consensus::Round round) {
   std::shared_lock<std::shared_timed_mutex> lock(mutex_);
   if (stop_requested_.load(std::memory_order_relaxed)) {
-    return boost::none;
+    return rxcpp::observable<>::empty<boost::optional<
+        std::shared_ptr<const OnDemandConnectionManager::ProposalType>>>();
   }
 
   log_->debug("onRequestProposal, {}", round);
 
-  return connections_.peers[kIssuer] | [&round](const auto &connection) {
-    return connection->onRequestProposal(round);
-  };
+  auto &conn = connections_.peers[kIssuer];
+  if (conn) {
+    return conn.value()->onRequestProposal(round);
+  }
+  return rxcpp::observable<>::error<boost::optional<
+      std::shared_ptr<const OnDemandConnectionManager::ProposalType>>>(
+      std::runtime_error("No connection for issuer found"));
 }
 
 void OnDemandConnectionManager::initializeConnections(

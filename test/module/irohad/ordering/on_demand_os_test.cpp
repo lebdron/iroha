@@ -129,11 +129,11 @@ class OnDemandOsTest : public ::testing::Test {
  * @then  check that previous round doesn't have proposal
  */
 TEST_F(OnDemandOsTest, EmptyRound) {
-  ASSERT_FALSE(os->onRequestProposal(initial_round));
+  ASSERT_FALSE(os->onRequestProposal(initial_round).as_blocking().first());
 
   os->onCollaborationOutcome(commit_round);
 
-  ASSERT_FALSE(os->onRequestProposal(initial_round));
+  ASSERT_FALSE(os->onRequestProposal(initial_round).as_blocking().first());
 }
 
 /**
@@ -147,7 +147,7 @@ TEST_F(OnDemandOsTest, NormalRound) {
 
   os->onCollaborationOutcome(commit_round);
 
-  ASSERT_TRUE(os->onRequestProposal(target_round));
+  ASSERT_TRUE(os->onRequestProposal(target_round).as_blocking().first());
 }
 
 /**
@@ -162,9 +162,9 @@ TEST_F(OnDemandOsTest, OverflowRound) {
 
   os->onCollaborationOutcome(commit_round);
 
-  ASSERT_TRUE(os->onRequestProposal(target_round));
+  ASSERT_TRUE(os->onRequestProposal(target_round).as_blocking().first());
   ASSERT_EQ(transaction_limit,
-            (*os->onRequestProposal(target_round))->transactions().size());
+            (*os->onRequestProposal(target_round).as_blocking().first())->transactions().size());
 }
 
 /**
@@ -180,7 +180,7 @@ TEST_F(OnDemandOsTest, Erase) {
   os->onCollaborationOutcome(
       {commit_round.block_round, commit_round.reject_round});
   ASSERT_TRUE(os->onRequestProposal(
-      {commit_round.block_round + 1, commit_round.reject_round}));
+      {commit_round.block_round + 1, commit_round.reject_round}).as_blocking().first());
 
   for (auto i = commit_round.reject_round + 1;
        i < (commit_round.reject_round + 1) + (proposal_limit + 2);
@@ -189,7 +189,7 @@ TEST_F(OnDemandOsTest, Erase) {
     os->onCollaborationOutcome({commit_round.block_round, i});
   }
   ASSERT_TRUE(os->onRequestProposal(
-      {commit_round.block_round + 1, commit_round.reject_round}));
+      {commit_round.block_round + 1, commit_round.reject_round}).as_blocking().first());
 }
 
 /**
@@ -232,7 +232,7 @@ TEST_F(OnDemandOsTest, UseFactoryForProposal) {
 
   os->onCollaborationOutcome(commit_round);
 
-  ASSERT_TRUE(os->onRequestProposal(target_round));
+  ASSERT_TRUE(os->onRequestProposal(target_round).as_blocking().first());
 }
 
 // Return matcher for batch, which passes it by const &
@@ -258,7 +258,7 @@ TEST_F(OnDemandOsTest, AlreadyProcessedProposalDiscarded) {
 
   os->onCollaborationOutcome(commit_round);
 
-  auto proposal = os->onRequestProposal(initial_round);
+  auto proposal = os->onRequestProposal(initial_round).as_blocking().first();
 
   EXPECT_FALSE(proposal);
 }
@@ -280,7 +280,7 @@ TEST_F(OnDemandOsTest, PassMissingTransaction) {
 
   os->onCollaborationOutcome(commit_round);
 
-  auto proposal = os->onRequestProposal(target_round);
+  auto proposal = os->onRequestProposal(target_round).as_blocking().first();
 
   // since we only sent one transaction,
   // if the proposal is present, there is no need to check for that specific tx
@@ -312,7 +312,7 @@ TEST_F(OnDemandOsTest, SeveralTransactionsOneCommited) {
 
   os->onCollaborationOutcome(commit_round);
 
-  auto proposal = os->onRequestProposal(target_round);
+  auto proposal = os->onRequestProposal(target_round).as_blocking().first();
   const auto &txs = proposal->get()->transactions();
   auto &batch2_tx = *batch2.transactions().at(0);
 
@@ -335,7 +335,7 @@ TEST_F(OnDemandOsTest, DuplicateTxTest) {
   auto txs2 = generateTransactions({1, 2}, now);
   os->onBatches(txs2);
   os->onCollaborationOutcome(commit_round);
-  auto proposal = os->onRequestProposal(target_round);
+  auto proposal = os->onRequestProposal(target_round).as_blocking().first();
 
   ASSERT_EQ(1, boost::size((*proposal)->transactions()));
 }
@@ -357,11 +357,11 @@ TEST_F(OnDemandOsTest, RejectCommit) {
   os->onCollaborationOutcome(
       {initial_round.block_round, initial_round.reject_round + 2});
   auto proposal = os->onRequestProposal(
-      {initial_round.block_round, initial_round.reject_round + 3});
+      {initial_round.block_round, initial_round.reject_round + 3}).as_blocking().first();
 
   ASSERT_EQ(2, boost::size((*proposal)->transactions()));
 
-  proposal = os->onRequestProposal(commit_round);
+  proposal = os->onRequestProposal(commit_round).as_blocking().first();
   ASSERT_EQ(2, boost::size((*proposal)->transactions()));
 }
 
@@ -378,5 +378,5 @@ TEST_F(OnDemandOsTest, FailOnCreationStrategy) {
 
   os->onCollaborationOutcome(commit_round);
 
-  ASSERT_TRUE(os->onRequestProposal(target_round));
+  ASSERT_TRUE(os->onRequestProposal(target_round).as_blocking().first());
 }

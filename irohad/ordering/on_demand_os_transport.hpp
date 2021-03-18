@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <boost/optional.hpp>
+#include <rxcpp/rx-observable-fwd.hpp>
 #include "common/result_fwd.hpp"
 #include "consensus/round.hpp"
 #include "cryptography/hash.hpp"
@@ -76,7 +77,8 @@ namespace iroha {
          * Calculated as block_height + 1
          * @return proposal for requested round
          */
-        virtual boost::optional<std::shared_ptr<const ProposalType>>
+        virtual rxcpp::observable<
+            boost::optional<std::shared_ptr<const ProposalType>>>
         onRequestProposal(consensus::Round round) = 0;
 
         virtual ~OdOsNotification() = default;

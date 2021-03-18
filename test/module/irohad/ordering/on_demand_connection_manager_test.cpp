@@ -101,14 +101,16 @@ TEST_F(OnDemandConnectionManagerTest, onBatches) {
  */
 TEST_F(OnDemandConnectionManagerTest, onRequestProposal) {
   consensus::Round round{};
-  auto oproposal = boost::make_optional<
-      std::shared_ptr<const OnDemandConnectionManager::ProposalType>>({});
-  auto proposal = oproposal.value().get();
+  auto oproposal = rxcpp::observable<>::just<boost::optional<
+      std::shared_ptr<OnDemandConnectionManager::ProposalType const>>>(
+      boost::make_optional<
+          std::shared_ptr<OnDemandConnectionManager::ProposalType const>>({}));
+  auto proposal = oproposal.as_blocking().first().value().get();
   EXPECT_CALL(*connections[OnDemandConnectionManager::kIssuer],
               onRequestProposal(round))
       .WillOnce(Return(ByMove(std::move(oproposal))));
 
-  auto result = manager->onRequestProposal(round);
+  auto result = manager->onRequestProposal(round).as_blocking().first();
 
   ASSERT_TRUE(result);
   ASSERT_EQ(result.value().get(), proposal);
@@ -123,11 +125,14 @@ TEST_F(OnDemandConnectionManagerTest, onRequestProposal) {
  */
 TEST_F(OnDemandConnectionManagerTest, onRequestProposalNone) {
   consensus::Round round{};
+  auto oproposal = rxcpp::observable<>::just<boost::optional<
+      std::shared_ptr<OnDemandConnectionManager::ProposalType const>>>(
+      boost::none);
   EXPECT_CALL(*connections[OnDemandConnectionManager::kIssuer],
               onRequestProposal(round))
-      .WillOnce(Return(ByMove(std::move(boost::none))));
+      .WillOnce(Return(ByMove(std::move(oproposal))));
 
-  auto result = manager->onRequestProposal(round);
+  auto result = manager->onRequestProposal(round).as_blocking().first();
 
   ASSERT_FALSE(result);
 }

@@ -13,6 +13,7 @@
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/for_each.hpp>
 #include <boost/range/size.hpp>
+#include <rxcpp/rx-observable.hpp>
 #include "ametsuchi/tx_presence_cache.hpp"
 #include "ametsuchi/tx_presence_cache_utils.hpp"
 #include "common/visitor.hpp"
@@ -66,8 +67,8 @@ void OnDemandOrderingServiceImpl::onBatches(CollectionType batches) {
   log_->info("onBatches => collection size = {}", batches.size());
 }
 
-boost::optional<
-    std::shared_ptr<const OnDemandOrderingServiceImpl::ProposalType>>
+rxcpp::observable<boost::optional<
+    std::shared_ptr<OnDemandOrderingServiceImpl::ProposalType const>>>
 OnDemandOrderingServiceImpl::onRequestProposal(consensus::Round round) {
   log_->debug("Requesting a proposal for round {}", round);
   boost::optional<
@@ -76,7 +77,7 @@ OnDemandOrderingServiceImpl::onRequestProposal(consensus::Round round) {
   log_->debug("onRequestProposal, {}, {}returning a proposal.",
               round,
               result ? "" : "NOT ");
-  return result;
+  return rxcpp::observable<>::just(result);
 }
 
 // ---------------------------------| Private |---------------------------------

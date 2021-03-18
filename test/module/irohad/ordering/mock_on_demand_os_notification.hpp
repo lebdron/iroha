@@ -9,6 +9,7 @@
 #include "ordering/on_demand_os_transport.hpp"
 
 #include <gmock/gmock.h>
+#include <rxcpp/rx-observable.hpp>
 
 namespace iroha {
   namespace ordering {
@@ -18,7 +19,8 @@ namespace iroha {
         MOCK_METHOD1(onBatches, void(CollectionType));
 
         MOCK_METHOD1(onRequestProposal,
-                     boost::optional<std::shared_ptr<const ProposalType>>(
+                     rxcpp::observable<
+                         boost::optional<std::shared_ptr<const ProposalType>>>(
                          consensus::Round));
       };
 

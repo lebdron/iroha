@@ -6,6 +6,7 @@
 #include "ordering/impl/on_demand_os_client_grpc.hpp"
 
 #include <gtest/gtest.h>
+#include <rxcpp/rx-observable.hpp>
 #include "backend/protobuf/proposal.hpp"
 #include "backend/protobuf/proto_transport_factory.hpp"
 #include "backend/protobuf/transaction.hpp"
@@ -112,6 +113,10 @@ ACTION_P(SaveClientContextDeadline, deadline) {
   *deadline = arg0->deadline();
 }
 
+ACTION(ExecuteCall) {
+  static_cast<network::AsyncGrpcClient::AsyncClientCall *>(arg2)->onResponse();
+}
+
 /**
  * @given client
  * @when onRequestProposal is called
@@ -129,13 +134,16 @@ TEST_F(OnDemandOsClientGrpcTest, onRequestProposal) {
       ->mutable_payload()
       ->mutable_reduced_payload()
       ->set_creator_account_id(creator);
-  EXPECT_CALL(*stub, RequestProposal(_, _, _))
+  auto r = std::make_unique<
+      MockClientAsyncResponseReader<proto::ProposalResponse>>();
+  EXPECT_CALL(*stub, AsyncRequestProposalRaw(_, _, _))
       .WillOnce(DoAll(SaveClientContextDeadline(&deadline),
                       SaveArg<1>(&request),
-                      SetArgPointee<2>(response),
-                      Return(grpc::Status::OK)));
+                      Return(r.get())));
+  EXPECT_CALL(*r, Finish(_, _, _))
+      .WillOnce(DoAll(SetArgPointee<0>(response), ExecuteCall()));
 
-  auto proposal = client->onRequestProposal(round);
+  auto proposal = client->onRequestProposal(round).as_blocking().first();
 
   ASSERT_EQ(timepoint + timeout, deadline);
   ASSERT_EQ(request.round().block_round(), round.block_round);
@@ -155,13 +163,16 @@ TEST_F(OnDemandOsClientGrpcTest, onRequestProposalNone) {
   std::chrono::system_clock::time_point deadline;
   proto::ProposalRequest request;
   proto::ProposalResponse response;
-  EXPECT_CALL(*stub, RequestProposal(_, _, _))
+  auto r = std::make_unique<
+      MockClientAsyncResponseReader<proto::ProposalResponse>>();
+  EXPECT_CALL(*stub, AsyncRequestProposalRaw(_, _, _))
       .WillOnce(DoAll(SaveClientContextDeadline(&deadline),
                       SaveArg<1>(&request),
-                      SetArgPointee<2>(response),
-                      Return(grpc::Status::OK)));
+                      Return(r.get())));
+  EXPECT_CALL(*r, Finish(_, _, _))
+      .WillOnce(DoAll(SetArgPointee<0>(response), ExecuteCall()));
 
-  auto proposal = client->onRequestProposal(round);
+  auto proposal = client->onRequestProposal(round).as_blocking().first();
 
   ASSERT_EQ(timepoint + timeout, deadline);
   ASSERT_EQ(request.round().block_round(), round.block_round);

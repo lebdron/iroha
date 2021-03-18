@@ -74,8 +74,8 @@ namespace iroha {
 
       void onBatches(CollectionType batches) override;
 
-      boost::optional<std::shared_ptr<const ProposalType>> onRequestProposal(
-          consensus::Round round) override;
+      rxcpp::observable<boost::optional<std::shared_ptr<ProposalType const>>>
+      onRequestProposal(consensus::Round round) override;
 
      private:
       /**

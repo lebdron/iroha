@@ -124,8 +124,10 @@ TEST_F(OnDemandOsServerGrpcTest, RequestProposal) {
       ->mutable_reduced_payload()
       ->set_creator_account_id(creator);
 
-  std::shared_ptr<const shared_model::interface::Proposal> iproposal(
-      std::make_shared<const shared_model::proto::Proposal>(proposal));
+  auto iproposal = rxcpp::observable<>::just<boost::optional<
+      std::shared_ptr<shared_model::interface::Proposal const>>>(
+      std::shared_ptr<shared_model::interface::Proposal const>(
+          std::make_shared<shared_model::proto::Proposal const>(proposal)));
   EXPECT_CALL(*notification, onRequestProposal(round))
       .WillOnce(Return(ByMove(std::move(iproposal))));
 
@@ -152,8 +154,10 @@ TEST_F(OnDemandOsServerGrpcTest, RequestProposalNone) {
   request.mutable_round()->set_block_round(round.block_round);
   request.mutable_round()->set_reject_round(round.reject_round);
   proto::ProposalResponse response;
+  auto iproposal = rxcpp::observable<>::just<boost::optional<
+      std::shared_ptr<shared_model::interface::Proposal const>>>(boost::none);
   EXPECT_CALL(*notification, onRequestProposal(round))
-      .WillOnce(Return(ByMove(std::move(boost::none))));
+      .WillOnce(Return(ByMove(std::move(iproposal))));
 
   server->RequestProposal(nullptr, &request, &response);
 
