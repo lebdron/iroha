@@ -11,6 +11,7 @@
 #include <shared_mutex>
 
 #include <boost/variant.hpp>
+#include <rxcpp/operators/rx-observe_on.hpp>
 #include <rxcpp/rx-lite.hpp>
 #include "interfaces/common_objects/types.hpp"
 #include "interfaces/iroha_internal/proposal.hpp"
@@ -55,7 +56,8 @@ namespace iroha {
           std::shared_ptr<ametsuchi::TxPresenceCache> tx_cache,
           std::shared_ptr<ProposalCreationStrategy> proposal_creation_strategy,
           size_t transaction_limit,
-          logger::LoggerPtr log);
+          logger::LoggerPtr log,
+          rxcpp::observe_on_one_worker coordination);
 
       ~OnDemandOrderingGate() override;
 
@@ -91,6 +93,7 @@ namespace iroha {
 
       /// max number of transactions passed to one ordering service
       size_t transaction_limit_;
+      consensus::Round last_processed_round_{0, 0};
       std::shared_ptr<OnDemandOrderingService> ordering_service_;
       std::unique_ptr<transport::OdOsNotification> network_client_;
       rxcpp::composite_subscription processed_tx_hashes_subscription_;

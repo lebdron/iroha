@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include <rxcpp/operators/rx-observe_on.hpp>
 #include "ametsuchi/peer_query_factory.hpp"
 #include "consensus/consensus_block_cache.hpp"
 #include "consensus/yac/consensus_outcome_type.hpp"
@@ -50,7 +51,8 @@ namespace iroha {
             const logger::LoggerManagerTreePtr &consensus_log_manager,
             std::chrono::milliseconds delay,
             std::shared_ptr<iroha::network::GenericClientFactory>
-                client_factory);
+                client_factory,
+            rxcpp::observe_on_one_worker coordination);
 
         std::shared_ptr<NetworkImpl> getConsensusNetwork() const;
 

@@ -215,7 +215,8 @@ auto OnDemandOrderingInit::createGate(
     std::shared_ptr<iroha::ametsuchi::TxPresenceCache> tx_cache,
     std::shared_ptr<ProposalCreationStrategy> creation_strategy,
     size_t max_number_of_transactions,
-    const logger::LoggerManagerTreePtr &ordering_log_manager) {
+    const logger::LoggerManagerTreePtr &ordering_log_manager,
+    rxcpp::observe_on_one_worker coordination) {
   return std::make_shared<OnDemandOrderingGate>(
       std::move(ordering_service),
       std::move(network_client),
@@ -266,7 +267,8 @@ auto OnDemandOrderingInit::createGate(
       std::move(tx_cache),
       std::move(creation_strategy),
       max_number_of_transactions,
-      ordering_log_manager->getChild("Gate")->getLogger());
+      ordering_log_manager->getChild("Gate")->getLogger(),
+      coordination);
 }
 
 auto OnDemandOrderingInit::createService(
@@ -307,7 +309,8 @@ OnDemandOrderingInit::initOrderingGate(
     std::shared_ptr<iroha::ametsuchi::TxPresenceCache> tx_cache,
     std::shared_ptr<ProposalCreationStrategy> creation_strategy,
     logger::LoggerManagerTreePtr ordering_log_manager,
-    std::shared_ptr<iroha::network::GenericClientFactory> client_factory) {
+    std::shared_ptr<iroha::network::GenericClientFactory> client_factory,
+    rxcpp::observe_on_one_worker coordination) {
   auto ordering_service = createService(max_number_of_transactions,
                                         proposal_factory,
                                         tx_cache,
@@ -331,5 +334,6 @@ OnDemandOrderingInit::initOrderingGate(
       std::move(tx_cache),
       std::move(creation_strategy),
       max_number_of_transactions,
-      ordering_log_manager);
+      ordering_log_manager,
+      coordination);
 }

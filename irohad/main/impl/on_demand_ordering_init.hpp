@@ -9,6 +9,7 @@
 #include <chrono>
 #include <vector>
 
+#include <rxcpp/operators/rx-observe_on.hpp>
 #include <rxcpp/rx-lite.hpp>
 #include "interfaces/common_objects/types.hpp"
 #include "logger/logger_fwd.hpp"
@@ -99,7 +100,8 @@ namespace iroha {
           std::shared_ptr<ametsuchi::TxPresenceCache> tx_cache,
           std::shared_ptr<ProposalCreationStrategy> creation_strategy,
           size_t max_number_of_transactions,
-          const logger::LoggerManagerTreePtr &ordering_log_manager);
+          const logger::LoggerManagerTreePtr &ordering_log_manager,
+          rxcpp::observe_on_one_worker coordination);
 
       /**
        * Creates on-demand ordering service. \see initOrderingGate for
@@ -164,7 +166,8 @@ namespace iroha {
           std::shared_ptr<ametsuchi::TxPresenceCache> tx_cache,
           std::shared_ptr<ProposalCreationStrategy> creation_strategy,
           logger::LoggerManagerTreePtr ordering_log_manager,
-          std::shared_ptr<iroha::network::GenericClientFactory> client_factory);
+          std::shared_ptr<iroha::network::GenericClientFactory> client_factory,
+          rxcpp::observe_on_one_worker coordination);
 
       /// gRPC service for ordering service
       std::shared_ptr<grpc::Service> service;

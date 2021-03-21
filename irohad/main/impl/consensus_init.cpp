@@ -101,7 +101,8 @@ namespace iroha {
           const logger::LoggerManagerTreePtr &consensus_log_manager,
           std::chrono::milliseconds delay,
           std::shared_ptr<iroha::network::GenericClientFactory>
-              client_factory) {
+              client_factory,
+          rxcpp::observe_on_one_worker coordination) {
         auto peer_orderer = createPeerOrderer(peer_query_factory);
         auto peers = peer_query_factory->createPeerQuery() |
             [](auto &&peer_query) { return peer_query->getLedgerPeers(); };
@@ -119,7 +120,7 @@ namespace iroha {
                              createTimer(vote_delay_milliseconds),
                              consensus_network_,
                              consistency_model,
-                             rxcpp::observe_on_new_thread(),
+                             coordination,
                              consensus_log_manager);
         consensus_network_->subscribe(yac);
 

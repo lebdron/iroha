@@ -8,6 +8,7 @@
 
 #include <optional>
 
+#include <rxcpp/operators/rx-observe_on.hpp>
 #include "consensus/consensus_block_cache.hpp"
 #include "consensus/gate_object.hpp"
 #include "cryptography/crypto_provider/abstract_crypto_model_signer.hpp"
@@ -369,6 +370,8 @@ class Irohad {
   logger::LoggerManagerTreePtr log_manager_;  ///< application root log manager
 
   logger::LoggerPtr log_;  ///< log for local messages
+
+  rxcpp::observe_on_one_worker pipeline_thread_;
 };
 
 #endif  // IROHA_APPLICATION_HPP

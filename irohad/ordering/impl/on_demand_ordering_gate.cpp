@@ -5,14 +5,16 @@
 
 #include "ordering/impl/on_demand_ordering_gate.hpp"
 
-#include <iterator>
-
+#include <boost/optional/optional_io.hpp>
 #include <boost/range/adaptor/filtered.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/empty.hpp>
-#include <rxcpp/operators/rx-take_while.hpp>
+#include <iterator>
+#include <rxcpp/operators/rx-flat_map.hpp>
 #include <rxcpp/operators/rx-map.hpp>
+#include <rxcpp/operators/rx-take_while.hpp>
+
 #include "ametsuchi/tx_presence_cache.hpp"
 #include "ametsuchi/tx_presence_cache_utils.hpp"
 #include "common/visitor.hpp"
@@ -35,7 +37,8 @@ OnDemandOrderingGate::OnDemandOrderingGate(
     std::shared_ptr<ametsuchi::TxPresenceCache> tx_cache,
     std::shared_ptr<ProposalCreationStrategy> proposal_creation_strategy,
     size_t transaction_limit,
-    logger::LoggerPtr log)
+    logger::LoggerPtr log,
+    rxcpp::observe_on_one_worker coordination)
     : log_(std::move(log)),
       transaction_limit_(transaction_limit),
       ordering_service_(std::move(ordering_service)),
@@ -62,10 +65,11 @@ OnDemandOrderingGate::OnDemandOrderingGate(
                   }
                   return true;
                 })
-                .map([this,
+                .flat_map([this,
                       proposal_creation_strategy =
-                          std::move(proposal_creation_strategy)](
-                         RoundSwitch const &event) {
+                          std::move(proposal_creation_strategy),
+                      coordination =
+                          std::move(coordination)](RoundSwitch const &event) {
                   log_->debug("Current: {}", event.next_round);
 
                   // notify our ordering service about new round
@@ -77,14 +81,21 @@ OnDemandOrderingGate::OnDemandOrderingGate(
                   this->sendCachedTransactions();
 
                   // request proposal for the current round
-                  auto proposal = this->processProposalRequest(
-                      network_client_->onRequestProposal(event.next_round)
-                          .as_blocking()
-                          .first());
-                  // vote for the object received from the network
-                  return network::OrderingEvent{std::move(proposal),
-                                                event.next_round,
-                                                std::move(event.ledger_state)};
+                  return network_client_->onRequestProposal(event.next_round)
+                      .observe_on(coordination)
+                      .filter([this, next_round = event.next_round](auto) {
+                        return last_processed_round_ < next_round;
+                      })
+                      .tap([this, next_round = event.next_round](auto) {
+                        last_processed_round_ = next_round;
+                      })
+                      .map([this, event](auto maybe_proposal) {
+                        // vote for the object received from the network
+                        return network::OrderingEvent{
+                            processProposalRequest(maybe_proposal),
+                            event.next_round,
+                            std::move(event.ledger_state)};
+                      });
                 });
         rxcpp::connectable_observable<network::OrderingEvent> published_events =
             events.publish();
@@ -212,12 +223,12 @@ OnDemandOrderingGate::removeReplaysAndDuplicates(
   auto unprocessed_txs =
       proposal->transactions() | boost::adaptors::indexed()
       | boost::adaptors::filtered(
-            [proposal_txs_validation_results =
-                 std::move(proposal_txs_validation_results)](const auto &el) {
-              return proposal_txs_validation_results.at(el.index());
-            })
+          [proposal_txs_validation_results =
+               std::move(proposal_txs_validation_results)](const auto &el) {
+            return proposal_txs_validation_results.at(el.index());
+          })
       | boost::adaptors::transformed(
-            [](const auto &el) -> decltype(auto) { return el.value(); });
+          [](const auto &el) -> decltype(auto) { return el.value(); });
 
   return proposal_factory_->unsafeCreateProposal(
       proposal->height(), proposal->createdTime(), unprocessed_txs);

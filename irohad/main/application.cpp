@@ -128,7 +128,9 @@ Irohad::Irohad(
       yac_init(std::make_unique<iroha::consensus::yac::YacInit>()),
       consensus_gate_objects(consensus_gate_objects_lifetime),
       log_manager_(std::move(logger_manager)),
-      log_(log_manager_->getLogger()) {
+      log_(log_manager_->getLogger()),
+      pipeline_thread_(
+          rxcpp::observe_on_new_thread().create_coordinator().get_scheduler()) {
   log_->info("created");
   // TODO: rework in a more C++11+ - ish way luckychess 29.06.2019 IR-575
   std::srand(std::time(0));
@@ -608,7 +610,8 @@ Irohad::RunResult Irohad::initOrderingGate() {
       persistent_cache,
       proposal_strategy,
       log_manager_->getChild("Ordering"),
-      inter_peer_client_factory_);
+      inter_peer_client_factory_,
+      pipeline_thread_);
   log_->info("[Init] => init ordering gate - [{}]",
              logger::boolRepr(bool(ordering_gate)));
   return {};
@@ -712,7 +715,8 @@ Irohad::RunResult Irohad::initConsensusGate() {
       log_manager_->getChild("Consensus"),
       std::chrono::milliseconds(
           config_.max_round_delay_ms.value_or(kMaxRoundsDelayDefault)),
-      inter_peer_client_factory_);
+      inter_peer_client_factory_,
+      pipeline_thread_);
   consensus_gate->onOutcome().subscribe(
       consensus_gate_events_subscription,
       consensus_gate_objects.get_subscriber());
@@ -1010,13 +1014,18 @@ Irohad::RunResult Irohad::run() {
     storage->on_commit().subscribe(
         ordering_init.commit_notifier.get_subscriber());
 
-    ordering_init.commit_notifier.get_subscriber().on_next(std::move(block));
+    pipeline_thread_.create_coordinator().get_worker().schedule(
+        [&](auto const &) {
+          ordering_init.commit_notifier.get_subscriber().on_next(
+              std::move(block));
 
-    ordering_init.sync_event_notifier.get_subscriber().on_next(
-        synchronizer::SynchronizationEvent{
-            SynchronizationOutcomeType::kCommit,
-            {block_height, ordering::kFirstRejectRound},
-            *initial_ledger_state});
+          ordering_init.sync_event_notifier.get_subscriber().on_next(
+              synchronizer::SynchronizationEvent{
+                  SynchronizationOutcomeType::kCommit,
+                  {block_height, ordering::kFirstRejectRound},
+                  *initial_ledger_state});
+        });
+
     return {};
   };
 }
