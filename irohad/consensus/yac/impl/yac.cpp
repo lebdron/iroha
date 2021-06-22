@@ -33,23 +33,24 @@ namespace iroha {
           std::shared_ptr<YacNetwork> network,
           std::shared_ptr<YacCryptoProvider> crypto,
           std::shared_ptr<Timer> timer,
-          ClusterOrdering order,
-          Round round,
+          std::shared_ptr<LedgerState const> ledger_state,
           logger::LoggerPtr log) {
-        return std::make_shared<Yac>(
-            vote_storage, network, crypto, timer, order, round, std::move(log));
+        return std::make_shared<Yac>(vote_storage,
+                                     network,
+                                     crypto,
+                                     timer,
+                                     ledger_state,
+                                     std::move(log));
       }
 
       Yac::Yac(YacVoteStorage vote_storage,
                std::shared_ptr<YacNetwork> network,
                std::shared_ptr<YacCryptoProvider> crypto,
                std::shared_ptr<Timer> timer,
-               ClusterOrdering order,
-               Round round,
+               std::shared_ptr<LedgerState const> ledger_state,
                logger::LoggerPtr log)
           : log_(std::move(log)),
-            cluster_order_(order),
-            round_(round),
+            ledger_state_(ledger_state),
             vote_storage_(std::move(vote_storage)),
             network_(std::move(network)),
             crypto_(std::move(crypto)),
@@ -59,11 +60,15 @@ namespace iroha {
         network_->stop();
       }
 
+      void Yac::processLedgerState(
+          std::shared_ptr<LedgerState const> ledger_state) {
+        ledger_state_ = ledger_state;
+      }
+
       // ------|Hash gate|------
 
       void Yac::vote(YacHash hash,
-                     ClusterOrdering order,
-                     boost::optional<ClusterOrdering> alternative_order) {
+                     ClusterOrdering order) {
         log_->info("Order for voting: [{}]",
                    boost::algorithm::join(
                        order.getPeers()
@@ -71,77 +76,31 @@ namespace iroha {
                                  [](const auto &p) { return p->address(); }),
                        ", "));
 
-        cluster_order_ = order;
-        alternative_order_ = std::move(alternative_order);
-        round_ = hash.vote_round;
         auto vote = crypto_->getVote(hash);
         // TODO 10.06.2018 andrei: IR-1407 move YAC propagation strategy to a
         // separate entity
-        votingStep(vote);
+        votingStep(vote, std::move(order));
       }
 
       // ------|Network notifications|------
 
-      template <typename T, typename P>
-      void removeMatching(std::vector<T> &target, const P &predicate) {
-        target.erase(std::remove_if(target.begin(), target.end(), predicate),
-                     target.end());
-      }
-
-      template <typename CollectionType, typename ElementType>
-      bool contains(const CollectionType &haystack, const ElementType &needle) {
-        return std::find(haystack.begin(), haystack.end(), needle)
-            != haystack.end();
-      }
-
-      /// moves the votes not present in known_keys from votes to return value
-      void Yac::removeUnknownPeersVotes(std::vector<VoteMessage> &votes,
-                                        ClusterOrdering &order) {
-        auto known_keys = order.getPeers()
-            | boost::adaptors::transformed(
-                              [](const auto &peer) { return peer->pubkey(); });
-        removeMatching(
-            votes,
-            [known_keys = std::move(known_keys), this](VoteMessage &vote) {
-              if (not contains(known_keys, vote.signature->publicKey())) {
-                log_->warn("Got a vote from an unknown peer: {}", vote);
-                return true;
-              }
-              return false;
-            });
-      }
-
       std::optional<Answer> Yac::onState(std::vector<VoteMessage> state) {
-        removeUnknownPeersVotes(state, getCurrentOrder());
-        if (state.empty()) {
-          log_->debug("No votes left in the message.");
-          return std::nullopt;
-        }
-
         if (crypto_->verify(state)) {
           auto &proposal_round = getRound(state);
 
-          if (proposal_round.block_round > round_.block_round) {
+          if (proposal_round.block_round
+              > ledger_state_->top_block_info.height) {
             log_->info("Pass state from future for {} to pipeline",
                        proposal_round);
             return FutureMessage{std::move(state)};
           }
 
-          if (proposal_round.block_round < round_.block_round) {
+          if (proposal_round.block_round
+              < ledger_state_->top_block_info.height) {
             log_->info("Received state from past for {}, try to propagate back",
                        proposal_round);
             tryPropagateBack(state);
             return std::nullopt;
-          }
-
-          if (alternative_order_) {
-            // filter votes with peers from cluster order to avoid the case when
-            // alternative peer is not present in cluster order
-            removeUnknownPeersVotes(state, cluster_order_);
-            if (state.empty()) {
-              log_->debug("No votes left in the message.");
-              return std::nullopt;
-            }
           }
 
           return applyState(state);
@@ -158,7 +117,7 @@ namespace iroha {
 
       // ------|Private interface|------
 
-      void Yac::votingStep(VoteMessage vote, uint32_t attempt) {
+      void Yac::votingStep(VoteMessage vote, ClusterOrdering order, uint32_t attempt) {
         log_->info("votingStep got vote: {}, attempt {}", vote, attempt);
 
         auto committed = vote_storage_.isCommitted(vote.hash.vote_round);
@@ -183,21 +142,17 @@ namespace iroha {
           vote = crypto_->getVote(vote.hash);
         }
 
-        auto &cluster_order = getCurrentOrder();
-
-        const auto &current_leader = cluster_order.currentLeader();
+        const auto &current_leader = order.currentLeader();
 
         log_->info("Vote {} to peer {}", vote, current_leader);
 
         propagateStateDirectly(current_leader, {vote});
-        cluster_order.switchToNext();
+        order.switchToNext();
 
         timer_->invokeAfterDelay(
-            [this, vote, attempt] { this->votingStep(vote, attempt + 1); });
-      }
-
-      ClusterOrdering &Yac::getCurrentOrder() {
-        return alternative_order_ ? *alternative_order_ : cluster_order_;
+            [this, vote, order(std::move(order)), attempt] {
+              this->votingStep(vote, std::move(order), attempt + 1);
+            });
       }
 
       boost::optional<std::shared_ptr<shared_model::interface::Peer>>
@@ -216,14 +171,13 @@ namespace iroha {
       std::optional<Answer> Yac::applyState(
           const std::vector<VoteMessage> &state) {
         auto answer =
-            vote_storage_.store(state, cluster_order_.getNumberOfPeers());
+            vote_storage_.store(state, ledger_state_->ledger_peers);
 
         // TODO 10.06.2018 andrei: IR-1407 move YAC propagation strategy to a
         // separate entity
 
         if (answer) {
           auto &proposal_round = getRound(state);
-          auto current_round = round_;
 
           /*
            * It is possible that a new peer with an outdated peers list may
@@ -233,8 +187,7 @@ namespace iroha {
            * cannot apply votes from unknown peers.
            */
           if (state.size() > 1
-              or (proposal_round.block_round == current_round.block_round
-                  and cluster_order_.getPeers().size() == 1)) {
+              or ledger_state_->ledger_peers.size() == 1) {
             // some peer has already collected commit/reject, so it is sent
             if (vote_storage_.getProcessingState(proposal_round)
                 == ProposalState::kNotSentNotProcessed) {
@@ -265,13 +218,9 @@ namespace iroha {
               log_->info("Pass outcome for {} to pipeline", proposal_round);
               return *answer;
             case ProposalState::kSentProcessed:
-              if (current_round > proposal_round)
-                tryPropagateBack(state);
+              tryPropagateBack(state);
               break;
           }
-        } else {
-          // sent a state which didn't match with current one
-          tryPropagateBack(state);
         }
         return std::nullopt;
       }
@@ -303,7 +252,7 @@ namespace iroha {
       // ------|Propagation|------
 
       void Yac::propagateState(const std::vector<VoteMessage> &msg) {
-        for (const auto &peer : cluster_order_.getPeers()) {
+        for (const auto &peer : ledger_state_->ledger_peers) {
           propagateStateDirectly(*peer, msg);
         }
       }

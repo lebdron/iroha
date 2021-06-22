@@ -35,30 +35,28 @@ namespace iroha {
             std::shared_ptr<YacNetwork> network,
             std::shared_ptr<YacCryptoProvider> crypto,
             std::shared_ptr<Timer> timer,
-            ClusterOrdering order,
-            Round round,
+            std::shared_ptr<LedgerState const> ledger_state,
             logger::LoggerPtr log);
 
         Yac(YacVoteStorage vote_storage,
             std::shared_ptr<YacNetwork> network,
             std::shared_ptr<YacCryptoProvider> crypto,
             std::shared_ptr<Timer> timer,
-            ClusterOrdering order,
-            Round round,
+            std::shared_ptr<LedgerState const> ledger_state,
             logger::LoggerPtr log);
 
         // ------|Hash gate|------
 
-        void vote(YacHash hash,
-                  ClusterOrdering order,
-                  boost::optional<ClusterOrdering> alternative_order =
-                      boost::none) override;
+        void vote(YacHash hash, ClusterOrdering order) override;
 
         // ------|Network notifications|------
 
         std::optional<Answer> onState(std::vector<VoteMessage> state) override;
 
         void stop() override;
+
+        void processLedgerState(
+            std::shared_ptr<LedgerState const> ledger_state);
 
        private:
         // ------|Private interface|------
@@ -67,10 +65,7 @@ namespace iroha {
          * Voting step is strategy of propagating vote
          * until commit/reject message received
          */
-        void votingStep(VoteMessage vote, uint32_t attempt = 0);
-
-        /// Get cluster_order_ or alternative_order_ if present
-        ClusterOrdering &getCurrentOrder();
+        void votingStep(VoteMessage vote, ClusterOrdering order, uint32_t attempt = 0);
 
         /**
          * Find corresponding peer in the ledger from vote message
@@ -85,10 +80,6 @@ namespace iroha {
                                      ClusterOrdering &order);
 
         // ------|Apply data|------
-        /**
-         * @pre lock is locked
-         * @post lock is unlocked
-         */
         std::optional<Answer> applyState(const std::vector<VoteMessage> &state);
 
         // ------|Propagation|------
@@ -101,9 +92,7 @@ namespace iroha {
         logger::LoggerPtr log_;
 
         // ------|One round|------
-        ClusterOrdering cluster_order_;
-        boost::optional<ClusterOrdering> alternative_order_;
-        Round round_;
+        std::shared_ptr<LedgerState const> ledger_state_;
 
         // ------|Fields|------
         YacVoteStorage vote_storage_;

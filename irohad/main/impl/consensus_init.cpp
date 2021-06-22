@@ -24,11 +24,6 @@ using namespace iroha::consensus;
 using namespace iroha::consensus::yac;
 
 namespace {
-  auto createPeerOrderer(
-      std::shared_ptr<iroha::ametsuchi::PeerQueryFactory> peer_query_factory) {
-    return std::make_shared<PeerOrdererImpl>(peer_query_factory);
-  }
-
   auto createCryptoProvider(const shared_model::crypto::Keypair &keypair,
                             logger::LoggerPtr log) {
     auto crypto = std::make_shared<CryptoProviderImpl>(keypair, std::move(log));
@@ -55,11 +50,11 @@ namespace {
 
   std::shared_ptr<Yac> createYac(
       ClusterOrdering initial_order,
-      Round initial_round,
       const shared_model::crypto::Keypair &keypair,
       std::shared_ptr<Timer> timer,
       std::shared_ptr<YacNetwork> network,
       ConsistencyModel consistency_model,
+      std::shared_ptr<const iroha::LedgerState> ledger_state,
       const logger::LoggerManagerTreePtr &consensus_log_manager) {
     std::shared_ptr<iroha::consensus::yac::CleanupStrategy> cleanup_strategy =
         std::make_shared<iroha::consensus::yac::BufferedCleanupStrategy>();
@@ -72,7 +67,7 @@ namespace {
             keypair, consensus_log_manager->getChild("Crypto")->getLogger()),
         std::move(timer),
         initial_order,
-        initial_round,
+        ledger_state,
         consensus_log_manager->getChild("HashGate")->getLogger());
   }
 }  // namespace
@@ -122,9 +117,6 @@ namespace iroha {
       }
 
       std::shared_ptr<YacGate> YacInit::initConsensusGate(
-          Round initial_round,
-          std::shared_ptr<iroha::ametsuchi::PeerQueryFactory>
-              peer_query_factory,
           boost::optional<shared_model::interface::types::PeerList>
               alternative_peers,
           std::shared_ptr<const LedgerState> ledger_state,
@@ -140,10 +132,6 @@ namespace iroha {
           const logger::LoggerManagerTreePtr &consensus_log_manager,
           std::shared_ptr<iroha::network::GenericClientFactory>
               client_factory) {
-        auto peer_orderer = createPeerOrderer(peer_query_factory);
-        auto peers = peer_query_factory->createPeerQuery() |
-            [](auto &&peer_query) { return peer_query->getLedgerPeers(); };
-
         consensus_network_ = std::make_shared<ServiceImpl>(
             consensus_log_manager->getChild("Service")->getLogger(),
             [](std::vector<VoteMessage> state) {
@@ -151,8 +139,7 @@ namespace iroha {
             });
 
         yac_ = createYac(
-            *ClusterOrdering::create(peers.value()),
-            initial_round,
+            *ClusterOrdering::create(ledger_state->ledger_peers),
             keypair,
             createTimer(vote_delay_milliseconds),
             createNetwork(
@@ -160,6 +147,7 @@ namespace iroha {
                 client_factory,
                 consensus_log_manager->getChild("Network")->getLogger()),
             consistency_model,
+            ledger_state,
             consensus_log_manager);
         auto hash_provider = createHashProvider();
 
@@ -167,7 +155,7 @@ namespace iroha {
 
         yac_gate_ = std::make_shared<YacGateImpl>(
             yac_,
-            std::move(peer_orderer),
+            std::make_shared<PeerOrdererImpl>(),
             alternative_peers |
                 [](auto &peers) { return ClusterOrdering::create(peers); },
             std::move(ledger_state),

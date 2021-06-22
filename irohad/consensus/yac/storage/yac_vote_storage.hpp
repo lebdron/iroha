@@ -75,14 +75,12 @@ namespace iroha {
         /**
          * Find existed proposal storage or create new if required
          * @param msg - vote for finding
-         * @param peers_in_round - number of peer required
-         * for verify supermajority;
+         * @param peers - number of peer required for verify supermajority;
          * This parameter used on creation of proposal storage
          * @return - iter for required proposal storage
          */
         boost::optional<std::vector<YacProposalStorage>::iterator>
-        findProposalStorage(const VoteMessage &msg,
-                            PeersNumberType peers_in_round);
+        findProposalStorage(Round const &round, shared_model::interface::types::PeerList const &peers);
 
        public:
         // --------| public api |--------
@@ -100,12 +98,13 @@ namespace iroha {
         /**
          * Insert votes in storage
          * @param state - current message with votes
-         * @param peers_in_round - number of peers participated in round
+         * @param peers - peers participated in round
          * @return structure with result of inserting.
          * boost::none if msg not valid.
          */
-        boost::optional<Answer> store(std::vector<VoteMessage> state,
-                                      PeersNumberType peers_in_round);
+        boost::optional<Answer> store(
+            std::vector<VoteMessage> state,
+            shared_model::interface::types::PeerList const &peers);
 
         /**
          * Provide status about closing round of proposal/block

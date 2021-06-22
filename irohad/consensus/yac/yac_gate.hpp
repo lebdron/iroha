@@ -27,12 +27,8 @@ namespace iroha {
          * Proposal new hash in network
          * @param hash - hash for voting
          * @param order - peer ordering for round in hash
-         * @param alternative_order - peer order
          */
-        virtual void vote(YacHash hash,
-                          ClusterOrdering order,
-                          boost::optional<ClusterOrdering> alternative_order =
-                              boost::none) = 0;
+        virtual void vote(YacHash hash, ClusterOrdering order) = 0;
 
         /// Prevent any new outgoing network activity. Be passive.
         virtual void stop() = 0;

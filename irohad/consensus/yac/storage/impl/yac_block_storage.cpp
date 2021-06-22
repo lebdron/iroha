@@ -15,11 +15,11 @@ namespace iroha {
 
       YacBlockStorage::YacBlockStorage(
           YacHash hash,
-          PeersNumberType peers_in_round,
+          shared_model::interface::types::PeerList const & peers,
           std::shared_ptr<SupermajorityChecker> supermajority_checker,
           logger::LoggerPtr log)
           : storage_key_(std::move(hash)),
-            peers_in_round_(peers_in_round),
+            peers_(peers),
             supermajority_checker_(std::move(supermajority_checker)),
             log_(std::move(log)) {}
 
@@ -34,7 +34,7 @@ namespace iroha {
               msg.hash.vote_hashes.proposal_hash,
               msg.hash.vote_hashes.block_hash,
               votes_.size(),
-              peers_in_round_);
+              peers_.size());
         }
         return getState();
       }
@@ -57,7 +57,7 @@ namespace iroha {
 
       boost::optional<Answer> YacBlockStorage::getState() {
         auto supermajority = supermajority_checker_->hasSupermajority(
-            votes_.size(), peers_in_round_);
+            votes_.size(), peers_.size());
         if (supermajority) {
           return Answer(CommitMessage(votes_));
         }
@@ -82,7 +82,14 @@ namespace iroha {
       }
 
       bool YacBlockStorage::validScheme(VoteMessage &vote) {
-        return getStorageKey() == vote.hash;
+        auto known_peer = std::any_of(
+            peers_.begin(), peers_.end(), [&vote](auto const &peer) {
+              return vote.signature->publicKey() == peer->pubkey();
+            });
+        if (not known_peer) {
+          log_->warn("Got a vote from an unknown peer: {}", vote);
+        }
+        return getStorageKey() == vote.hash and known_peer;
       }
 
     }  // namespace yac

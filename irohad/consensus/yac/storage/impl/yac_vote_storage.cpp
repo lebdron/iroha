@@ -45,9 +45,9 @@ namespace iroha {
       }
 
       boost::optional<std::vector<YacProposalStorage>::iterator>
-      YacVoteStorage::findProposalStorage(const VoteMessage &msg,
-                                          PeersNumberType peers_in_round) {
-        const auto &round = msg.hash.vote_round;
+      YacVoteStorage::findProposalStorage(
+          Round const &round,
+          shared_model::interface::types::PeerList const &peers) {
         auto val = getProposalStorage(round);
         if (val != proposal_storages_.end()) {
           return val;
@@ -55,8 +55,8 @@ namespace iroha {
         if (strategy_->shouldCreateRound(round)) {
           return proposal_storages_.emplace(
               proposal_storages_.end(),
-              msg.hash.vote_round,
-              peers_in_round,
+              round,
+              peers,
               supermajority_checker_,
               log_manager_->getChild("ProposalStorage"));
         } else {
@@ -86,11 +86,13 @@ namespace iroha {
             log_manager_(std::move(log_manager)) {}
 
       boost::optional<Answer> YacVoteStorage::store(
-          std::vector<VoteMessage> state, PeersNumberType peers_in_round) {
+          std::vector<VoteMessage> state,
+          shared_model::interface::types::PeerList const &peers) {
         if (state.empty()) {
           return boost::none;
         }
-        return findProposalStorage(state.at(0), peers_in_round) |
+        auto round = state.at(0).hash.vote_round;
+        return findProposalStorage(round, peers) |
             [this, &state](auto &&storage) {
               const auto &round = storage->getStorageKey();
               return storage->insert(state) |

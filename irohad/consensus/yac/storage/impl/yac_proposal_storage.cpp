@@ -35,7 +35,7 @@ namespace iroha {
             YacHash(store_hash.vote_round,
                     store_hash.vote_hashes.proposal_hash,
                     store_hash.vote_hashes.block_hash),
-            peers_in_round_,
+            peers_,
             supermajority_checker_,
             log_manager_->getChild("BlockStorage")->getLogger());
       }
@@ -44,12 +44,12 @@ namespace iroha {
 
       YacProposalStorage::YacProposalStorage(
           Round store_round,
-          PeersNumberType peers_in_round,
+          shared_model::interface::types::PeerList const & peers,
           std::shared_ptr<SupermajorityChecker> supermajority_checker,
           logger::LoggerManagerTreePtr log_manager)
           : current_state_(boost::none),
             storage_key_(store_round),
-            peers_in_round_(peers_in_round),
+            peers_(peers),
             supermajority_checker_(supermajority_checker),
             log_manager_(std::move(log_manager)),
             log_(log_manager_->getLogger()) {}
@@ -127,7 +127,7 @@ namespace iroha {
                 | boost::adaptors::transformed([](const auto &storage) {
                     return storage.getNumberOfVotes();
                   }),
-            peers_in_round_);
+            peers_.size());
 
         if (is_reject) {
           std::vector<VoteMessage> result;

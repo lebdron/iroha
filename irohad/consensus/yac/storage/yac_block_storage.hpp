@@ -34,7 +34,7 @@ namespace iroha {
        public:
         YacBlockStorage(
             YacHash hash,
-            PeersNumberType peers_in_round,
+            shared_model::interface::types::PeerList const & peers,
             std::shared_ptr<SupermajorityChecker> supermajority_checker,
             logger::LoggerPtr log);
 
@@ -108,7 +108,7 @@ namespace iroha {
         /**
          * Number of peers in current round
          */
-        PeersNumberType peers_in_round_;
+        shared_model::interface::types::PeerList peers_;
 
         /**
          * Provide functions to check supermajority

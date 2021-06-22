@@ -45,7 +45,7 @@ namespace iroha {
 
         YacProposalStorage(
             Round store_round,
-            PeersNumberType peers_in_round,
+            shared_model::interface::types::PeerList const &peers,
             std::shared_ptr<SupermajorityChecker> supermajority_checker,
             logger::LoggerManagerTreePtr log_manager);
 
@@ -127,7 +127,7 @@ namespace iroha {
         /**
          * Provide number of peers participated in current round
          */
-        PeersNumberType peers_in_round_;
+        shared_model::interface::types::PeerList peers_;
 
         /**
          * Provide functions to check supermajority
